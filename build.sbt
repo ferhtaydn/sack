@@ -13,17 +13,38 @@ scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 resolvers ++= Seq(
-  "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
+  "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
+  "confluent" at "http://packages.confluent.io/maven/"
 )
 
 resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
 
 libraryDependencies ++= Seq(
-  "net.cakesolutions" %% "scala-kafka-client" % "0.10.0.0",
-  "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0",
+  "net.cakesolutions" %% "scala-kafka-client" % "0.10.0.0"
+    exclude("log4j", "log4j")
+    exclude("org.slf4j", "slf4j-log4j12")
+    exclude("org.slf4j", "log4j-over-slf4j")
+    exclude("org.slf4j", "slf4j-api"),
+
+  "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0"
+    exclude("log4j", "log4j")
+    exclude("org.slf4j", "slf4j-log4j12")
+    exclude("org.slf4j", "log4j-over-slf4j")
+    exclude("org.slf4j", "slf4j-api"),
+
   "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0" % "test",
 
   "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1",
+  "io.confluent" % "kafka-avro-serializer" % "3.0.1",
+
+  "org.slf4j" % "slf4j-api" % "1.7.21",
+  "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+
+  "org.apache.kafka" % "kafka_2.11" % "0.10.0.1"
+    exclude("log4j", "log4j")
+    exclude("org.slf4j", "slf4j-log4j12")
+    exclude("org.slf4j", "log4j-over-slf4j")
+    exclude("org.slf4j", "slf4j-api"),
 
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.3" % "test"
