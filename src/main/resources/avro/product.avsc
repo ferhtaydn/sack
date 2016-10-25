@@ -1,0 +1,31 @@
+{
+	"type": "record",
+	"name": "Product",
+	"namespace": "com.ferhtaydn.sack.model",
+	"fields": [
+		{
+			"name": "brand",
+			"type": "string"
+		},
+		{
+			"name": "supplierId",
+			"type": "int"
+		},
+		{
+			"name": "productType",
+			"type": "int"
+		},
+		{
+			"name": "gender",
+			"type": "int"
+		},
+		{
+			"name": "category",
+			"type": "int"
+		},
+		{
+			"name": "imageUrl",
+			"type": "string"
+		}
+	]
+}

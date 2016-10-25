@@ -16,10 +16,15 @@ resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 )
 
+resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
+
 libraryDependencies ++= Seq(
   "net.cakesolutions" %% "scala-kafka-client" % "0.10.0.0",
   "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0",
   "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0" % "test",
+
+  "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1",
+
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.3" % "test"
 )
