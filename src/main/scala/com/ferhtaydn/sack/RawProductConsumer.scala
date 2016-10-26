@@ -70,7 +70,8 @@ class RawProductConsumer(
 
     // Confirmed Offsets from KafkaProducer
     case o: Offsets ⇒
-      consumerActor ! Confirm(o, commit = true)
+      log.info(s"response from producer, offsets: $o")
+      consumerActor ! Confirm(o, commit = false)
   }
 
   private def processRecords(records: ConsumerRecords[String, String]) = {

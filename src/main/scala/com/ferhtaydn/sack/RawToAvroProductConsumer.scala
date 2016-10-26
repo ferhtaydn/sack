@@ -3,24 +3,25 @@ package com.ferhtaydn.sack
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import cakesolutions.kafka.akka._
+import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor, KafkaProducerActor, Offsets, ProducerRecords }
+import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
-import io.confluent.kafka.serializers.KafkaAvroSerializer
-import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
+import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
+import scala.util.Random
 import scala.concurrent.duration._
 
-object AvroProductConsumerBoot extends App {
+object RawToAvroProductConsumerBoot extends App {
 
   val config = ConfigFactory.load()
   val consumerConfig = config.getConfig("consumer")
-  val producerConfig = config.getConfig("producer-avro")
+  val producerConfig = config.getConfig("producerAvro")
 
-  AvroProductConsumer(consumerConfig, producerConfig)
+  RawToAvroProductConsumer(consumerConfig, producerConfig)
 
 }
 
-object AvroProductConsumer {
+object RawToAvroProductConsumer {
 
   def apply(consumerConfig: Config, producerConfig: Config): ActorRef = {
 
@@ -28,12 +29,12 @@ object AvroProductConsumer {
 
     val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
 
-    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new KafkaAvroSerializer)
+    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
 
     val system = ActorSystem("avro-product-consumer-system")
 
     system.actorOf(
-      Props(new AvroProductConsumer(consumerConf, actorConf, producerConf)),
+      Props(new RawToAvroProductConsumer(consumerConf, actorConf, producerConf)),
       "avro-product-consumer-actor"
     )
 
@@ -41,10 +42,10 @@ object AvroProductConsumer {
 
 }
 
-class AvroProductConsumer(
+class RawToAvroProductConsumer(
     kafkaConsumerConf: KafkaConsumer.Conf[String, String],
     consumerActorConf: KafkaConsumerActor.Conf,
-    kafkaProducerConf: KafkaProducer.Conf[String, AnyRef]
+    kafkaProducerConf: KafkaProducer.Conf[String, Array[Byte]]
 ) extends Actor with ActorLogging {
 
   val recordsExt = ConsumerRecords.extractor[String, String]
@@ -71,7 +72,13 @@ class AvroProductConsumer(
 
     // Confirmed Offsets from KafkaProducer
     case o: Offsets ⇒
-      consumerActor ! Confirm(o, commit = true)
+      log.info(s"response from producer, offsets: $o")
+      consumerActor ! Confirm(o, commit = false)
+  }
+
+  def prepareRecord(key: String, value: String): (String, Array[Byte]) = {
+    val p = Product("brand" + Random.nextInt(10).toString, 1, 2, 3, 4, "http" + Random.nextInt(10).toString)
+    (p.imageUrl, ProductSchema.productAsBytes(p))
   }
 
   private def processRecords(records: ConsumerRecords[String, String]) = {
@@ -79,13 +86,13 @@ class AvroProductConsumer(
     val transformedRecords = records.pairs.map {
       case (key, value) ⇒
         log.info(s"Received [$key, $value]")
-        (value, com.ferhtaydn.sack.model.Product("brand" + scala.util.Random.nextInt(100).toString, 1, 2, 3, 4, value.toUpperCase()))
+        prepareRecord("", value)
     }
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, com.ferhtaydn.sack.model.Product](
-      "product-csv-avro1",
+    producer ! ProducerRecords.fromKeyValues[String, Array[Byte]](
+      "product-csv-avro",
       transformedRecords,
       Some(records.offsets),
       None

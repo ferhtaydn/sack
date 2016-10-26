@@ -60,7 +60,7 @@ scalacOptions ++= Seq(
     "-language:implicitConversions",
     "-language:experimental.macros",
     "-unchecked",
-    "-Ywarn-unused-import",
+    //"-Ywarn-unused-import",
     "-Ywarn-nullary-unit",
     "-Xfatal-warnings",
     "-Xlint",
