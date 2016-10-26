@@ -1,8 +1,8 @@
 package com.ferhtaydn.sack
 
-import java.io.ByteArrayOutputStream
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
-import com.sksamuel.avro4s.{ AvroOutputStream, RecordFormat, SchemaFor }
+import com.sksamuel.avro4s.{ AvroInputStream, AvroOutputStream, RecordFormat, SchemaFor }
 import org.apache.avro.Schema
 import com.ferhtaydn.sack.model.Product
 import org.apache.avro.generic.GenericRecord
@@ -32,6 +32,12 @@ object ProductSchema {
     output.write(p)
     output.close()
     baos.toByteArray
+  }
+
+  def productFromBytes(bytes: Array[Byte]): Product = {
+    val in = new ByteArrayInputStream(bytes)
+    val input = AvroInputStream.binary[Product](in)
+    input.iterator.toSeq.head
   }
 
   def productAsJson(p: Product): String = {

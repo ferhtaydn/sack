@@ -31,11 +31,11 @@ object RawToAvroProductConsumer {
 
     val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
 
-    val system = ActorSystem("avro-product-consumer-system")
+    val system = ActorSystem("raw-to-avro-product-consumer-system")
 
     system.actorOf(
       Props(new RawToAvroProductConsumer(consumerConf, actorConf, producerConf)),
-      "avro-product-consumer-actor"
+      "raw-to-avro-product-consumer-actor"
     )
 
   }
