@@ -1,27 +1,25 @@
-package com.ferhtaydn.sack
+package com.ferhtaydn.sack.raw
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
+import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor, KafkaProducerActor, Offsets, ProducerRecords }
-import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
-import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
+import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
 
-import scala.util.Random
 import scala.concurrent.duration._
 
-object RawToAvroProductConsumerBoot extends App {
+object RawToRawProcessorBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumer")
-  val producerConfig = config.getConfig("producerAvro")
+  val consumerConfig = config.getConfig("consumerRaw")
+  val producerConfig = config.getConfig("producerRaw")
 
-  RawToAvroProductConsumer(consumerConfig, producerConfig)
+  RawToRawProcessor(consumerConfig, producerConfig)
 
 }
 
-object RawToAvroProductConsumer {
+object RawToRawProcessor {
 
   def apply(consumerConfig: Config, producerConfig: Config): ActorRef = {
 
@@ -29,26 +27,28 @@ object RawToAvroProductConsumer {
 
     val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
 
-    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
+    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new StringSerializer)
 
-    val system = ActorSystem("raw-to-avro-product-consumer-system")
+    val system = ActorSystem("raw-to-raw-processor-system")
 
     system.actorOf(
-      Props(new RawToAvroProductConsumer(consumerConf, actorConf, producerConf)),
-      "raw-to-avro-product-consumer-actor"
+      Props(new RawToRawProcessor(consumerConf, actorConf, producerConf)),
+      "raw-to-raw-processor-actor"
     )
 
   }
 
 }
 
-class RawToAvroProductConsumer(
+class RawToRawProcessor(
     kafkaConsumerConf: KafkaConsumer.Conf[String, String],
     consumerActorConf: KafkaConsumerActor.Conf,
-    kafkaProducerConf: KafkaProducer.Conf[String, Array[Byte]]
+    kafkaProducerConf: KafkaProducer.Conf[String, String]
 ) extends Actor with ActorLogging {
 
   val recordsExt = ConsumerRecords.extractor[String, String]
+  val inputTopic = "product-csv-raw"
+  val outputTopic = "product-csv-raw-uppercase"
 
   val consumerActor = context.actorOf(
     KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
@@ -62,23 +62,17 @@ class RawToAvroProductConsumer(
     "kafka-producer-actor"
   )
 
-  consumerActor ! Subscribe.AutoPartition(List("product-csv-raw"))
+  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
 
   override def receive: Receive = {
 
-    // Records from Kafka
     case recordsExt(records) ⇒
+      log.info("Records from KafkaConsumer:\n")
       processRecords(records)
 
-    // Confirmed Offsets from KafkaProducer
     case o: Offsets ⇒
-      log.info(s"response from producer, offsets: $o")
+      log.info(s"Response from KafkaProducer, offsets: $o")
       consumerActor ! Confirm(o, commit = false)
-  }
-
-  def prepareRecord(key: String, value: String): (String, Array[Byte]) = {
-    val p = Product("brand" + Random.nextInt(10).toString, 1, 2, 3, 4, "http" + Random.nextInt(10).toString)
-    (p.imageUrl, ProductSchema.productAsBytes(p))
   }
 
   private def processRecords(records: ConsumerRecords[String, String]) = {
@@ -86,13 +80,13 @@ class RawToAvroProductConsumer(
     val transformedRecords = records.pairs.map {
       case (key, value) ⇒
         log.info(s"Received [$key, $value]")
-        prepareRecord("", value)
+        (value, value.toUpperCase())
     }
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, Array[Byte]](
-      "product-csv-avro",
+    producer ! ProducerRecords.fromKeyValues[String, String](
+      outputTopic,
       transformedRecords,
       Some(records.offsets),
       None

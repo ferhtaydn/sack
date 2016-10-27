@@ -1,24 +1,25 @@
-package com.ferhtaydn.sack
+package com.ferhtaydn.sack.binary
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
-import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.KafkaConsumer
+import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor }
+import com.ferhtaydn.sack.ProductSchema
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.kafka.common.serialization.{ ByteArrayDeserializer, StringDeserializer }
 
 import scala.concurrent.duration._
 
-object AvroProductConsumerBoot extends App {
+object BinaryProductConsumerBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerAvro")
+  val consumerConfig = config.getConfig("consumerBinary")
 
-  AvroProductConsumer(consumerConfig)
+  BinaryProductConsumer(consumerConfig)
 
 }
 
-object AvroProductConsumer {
+object BinaryProductConsumer {
 
   def apply(consumerConfig: Config): ActorRef = {
 
@@ -26,23 +27,24 @@ object AvroProductConsumer {
 
     val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
 
-    val system = ActorSystem("avro-product-consumer-system")
+    val system = ActorSystem("binary-product-consumer-system")
 
     system.actorOf(
-      Props(new AvroProductConsumer(consumerConf, actorConf)),
-      "avro-product-consumer-actor"
+      Props(new BinaryProductConsumer(consumerConf, actorConf)),
+      "binary-product-consumer-actor"
     )
 
   }
 
 }
 
-class AvroProductConsumer(
+class BinaryProductConsumer(
     kafkaConsumerConf: KafkaConsumer.Conf[String, Array[Byte]],
     consumerActorConf: KafkaConsumerActor.Conf
 ) extends Actor with ActorLogging {
 
   val recordsExt = ConsumerRecords.extractor[String, Array[Byte]]
+  val inputTopic = "product-csv-binary"
 
   val consumerActor = context.actorOf(
     KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
@@ -51,12 +53,12 @@ class AvroProductConsumer(
 
   context.watch(consumerActor)
 
-  consumerActor ! Subscribe.AutoPartition(List("product-csv-avro"))
+  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
 
   override def receive: Receive = {
 
-    // Records from Kafka
     case recordsExt(records) ⇒
+      log.info("Records from KafkaConsumer:\n")
       processRecords(records)
 
   }

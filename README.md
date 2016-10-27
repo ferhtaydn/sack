@@ -26,7 +26,7 @@ $ cat /tmp/connect-file-source.properties
 
 $ ./bin/kafka-topics --list --zookeeper localhost:2181
 
-// RawProductConsumer.scala
+// RawToRawProcessor.scala
 
 $ ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw --from-beginning
 
@@ -35,11 +35,15 @@ $ ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-ra
 
 $ ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw-uppercase --from-beginning
 
-$ sbt runMain RawProductConsumerBoot
+$ sbt runMain RawToRawProcessorBoot
 
 
-// AvroProductConsumer.scala
+// RawToAvroGenericProcessor.scala
 
+// NOT REQUIRED, the topic is auto created with schema registration
+$ ./bin/kafka-topics --zookeeper localhost:2181 --create --topic product-csv-avro --partitions 1 --replication-factor 1
+
+// NOT REQUIRED, the topic is auto created with schema registration
 $  POST http://localhost:8081/subjects/product-csv-avro-key/versions
    
    {
@@ -52,4 +56,5 @@ $  POST http://localhost:8081/subjects/product-csv-avro-value/versions
    	"schema": "{\"type\":\"record\",\"name\":\"Product\",\"namespace\":\"com.ferhtaydn.sack.model\",\"fields\":[{\"name\":\"brand\",\"type\":\"string\"},{\"name\":\"supplierId\",\"type\":\"int\"},{\"name\":\"productType\",\"type\":\"int\"},{\"name\":\"gender\",\"type\":\"int\"},{\"name\":\"category\",\"type\":\"int\"},{\"name\":\"imageUrl\",\"type\":\"string\"}]}"
    }
 
+$ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
 ```

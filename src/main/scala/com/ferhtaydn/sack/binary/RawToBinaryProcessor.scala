@@ -1,25 +1,28 @@
-package com.ferhtaydn.sack
+package com.ferhtaydn.sack.binary
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
-import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
 import cakesolutions.kafka.akka._
+import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
+import com.ferhtaydn.sack.ProductSchema
+import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
-import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
+import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
+import scala.util.Random
 
-object RawProductConsumerBoot extends App {
+object RawToBinaryProcessorBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumer")
-  val producerConfig = config.getConfig("producer")
+  val consumerConfig = config.getConfig("consumerRaw")
+  val producerConfig = config.getConfig("producerBinary")
 
-  RawProductConsumer(consumerConfig, producerConfig)
+  RawToBinaryProcessor(consumerConfig, producerConfig)
 
 }
 
-object RawProductConsumer {
+object RawToBinaryProcessor {
 
   def apply(consumerConfig: Config, producerConfig: Config): ActorRef = {
 
@@ -27,26 +30,28 @@ object RawProductConsumer {
 
     val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
 
-    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new StringSerializer)
+    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
 
-    val system = ActorSystem("raw-product-consumer-system")
+    val system = ActorSystem("raw-to-binary-processor-system")
 
     system.actorOf(
-      Props(new RawProductConsumer(consumerConf, actorConf, producerConf)),
-      "raw-product-consumer-actor"
+      Props(new RawToBinaryProcessor(consumerConf, actorConf, producerConf)),
+      "raw-to-binary-processor-actor"
     )
 
   }
 
 }
 
-class RawProductConsumer(
+class RawToBinaryProcessor(
     kafkaConsumerConf: KafkaConsumer.Conf[String, String],
     consumerActorConf: KafkaConsumerActor.Conf,
-    kafkaProducerConf: KafkaProducer.Conf[String, String]
+    kafkaProducerConf: KafkaProducer.Conf[String, Array[Byte]]
 ) extends Actor with ActorLogging {
 
   val recordsExt = ConsumerRecords.extractor[String, String]
+  val inputTopic = "product-csv-raw"
+  val outputTopic = "product-csv-binary"
 
   val consumerActor = context.actorOf(
     KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
@@ -60,32 +65,36 @@ class RawProductConsumer(
     "kafka-producer-actor"
   )
 
-  consumerActor ! Subscribe.AutoPartition(List("product-csv-raw"))
+  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
 
   override def receive: Receive = {
 
-    // Records from Kafka
     case recordsExt(records) ⇒
+      log.info("Records from KafkaConsumer:\n")
       processRecords(records)
 
-    // Confirmed Offsets from KafkaProducer
     case o: Offsets ⇒
-      log.info(s"response from producer, offsets: $o")
+      log.info(s"Response from KafkaProducer, offsets: $o")
       consumerActor ! Confirm(o, commit = false)
   }
 
   private def processRecords(records: ConsumerRecords[String, String]) = {
 
+    def prepareRecord(key: Option[String], value: String): (String, Array[Byte]) = {
+      val p = Product("brand" + Random.nextInt(10).toString, 1, 2, 3, 4, "http" + Random.nextInt(10).toString)
+      (p.imageUrl, ProductSchema.productAsBytes(p))
+    }
+
     val transformedRecords = records.pairs.map {
       case (key, value) ⇒
         log.info(s"Received [$key, $value]")
-        (value, value.toUpperCase())
+        prepareRecord(key, value)
     }
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, String](
-      "product-csv-raw-uppercase",
+    producer ! ProducerRecords.fromKeyValues[String, Array[Byte]](
+      outputTopic,
       transformedRecords,
       Some(records.offsets),
       None
