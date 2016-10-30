@@ -14,7 +14,7 @@ import org.apache.kafka.common.serialization.{ StringDeserializer, StringSeriali
 import scala.concurrent.duration._
 import scala.util.Random
 
-object RawToAvroProcessorBoot extends App {
+object RawToAvroGenericProcessorBoot extends App {
 
   val config = ConfigFactory.load()
   val consumerConfig = config.getConfig("consumerRaw")
@@ -88,7 +88,7 @@ class RawToAvroGenericProcessor(
 
     def prepareRecord(key: Option[String], value: String): (String, GenericRecord) = {
       val p = Product("brand" + Random.nextInt(10).toString, 1, 2, 3, 4, "http" + Random.nextInt(10).toString)
-      (p.imageUrl, ProductSchema.productRecord(p))
+      (p.imageUrl, ProductSchema.productToRecord(p))
     }
 
     val transformedRecords = records.pairs.map {

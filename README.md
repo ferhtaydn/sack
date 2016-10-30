@@ -21,7 +21,7 @@ $ cat /tmp/connect-file-source.properties
     name=product-csv-source
     connector.class=FileStreamSource
     tasks.max=1
-    file=/tmp/trendyol-product.csv
+    file=/tmp/products.csv
     topic=product-csv-raw
 
 $ ./bin/kafka-topics --list --zookeeper localhost:2181
@@ -40,6 +40,8 @@ $ sbt runMain RawToRawProcessorBoot
 
 // RawToAvroGenericProcessor.scala
 
+$ sbt runMain RawToAvroGenericProcessorBoot
+
 // NOT REQUIRED, the topic is auto created with schema registration
 $ ./bin/kafka-topics --zookeeper localhost:2181 --create --topic product-csv-avro --partitions 1 --replication-factor 1
 
@@ -57,4 +59,7 @@ $  POST http://localhost:8081/subjects/product-csv-avro-value/versions
    }
 
 $ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
+
+$ sbt runMain AvroGenericProductConsumerBoot
+
 ```

@@ -48,8 +48,13 @@ object ProductSchema {
     baos.toString("UTF-8")
   }
 
-  def productRecord(p: Product): GenericRecord = {
+  def productToRecord(p: Product): GenericRecord = {
     val format = RecordFormat[Product]
     format.to(p)
+  }
+
+  def productFromRecord(productRecord: GenericRecord): Product = {
+    val format = RecordFormat[Product]
+    format.from(productRecord)
   }
 }
