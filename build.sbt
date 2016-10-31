@@ -35,6 +35,9 @@ libraryDependencies ++= Seq(
 
   "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0" % "test",
 
+  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
+
   "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1",
   "io.confluent" % "kafka-avro-serializer" % "3.0.1",
 
