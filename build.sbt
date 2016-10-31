@@ -14,7 +14,8 @@ crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
-  "confluent" at "http://packages.confluent.io/maven/"
+  "confluent" at "http://packages.confluent.io/maven/",
+  "confluent-repository" at "http://packages.confluent.io/maven/"
 )
 
 resolvers += Resolver.bintrayRepo("cakesolutions", "maven")

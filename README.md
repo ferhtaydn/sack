@@ -40,7 +40,7 @@ $ sbt runMain RawToRawProcessorBoot
 
 // RawToAvroGenericProcessor.scala
 
-$ sbt runMain RawToAvroGenericProcessorBoot
+$ sbt runMain com.ferhtaydn.sack.avro.RawToAvroGenericProcessorBoot
 
 // NOT REQUIRED, the topic is auto created with schema registration
 $ ./bin/kafka-topics --zookeeper localhost:2181 --create --topic product-csv-avro --partitions 1 --replication-factor 1
@@ -60,13 +60,19 @@ $  POST http://localhost:8081/subjects/product-csv-avro-value/versions
 
 $ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
 
-$ sbt runMain AvroGenericProductConsumerBoot
 
-
+CASSANDRA SINK
 // alternatif to combine both connect in one use.
+
+$ ~/workspace/datamountaineer/stream-reactor/kafka-connect-cassandra/build/libs(branch:master) » export CLASSPATH=kafka-connect-cassandra-0.2-3.0.1-all.jar
+$ ~/workspace/datamountaineer/stream-reactor/kafka-connect-cassandra/build/libs(branch:master) » ~/workspace/confluent/confluent-3.0.1/bin/connect-distributed /tmp/connect-distributed.properties
 $ ~/workspace/datamountaineer/kafka-connect-tools/build/libs(branch:master) » java -jar kafka-connect-cli-0.6-all.jar create product-csv-source < /tmp/connect-file-source.properties
 
-KAFKA CASSANDRA CONNECTOR
+$ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw --from-beginning
+
+$ sbt runMain com.ferhtaydn.sack.avro.RawToAvroGenericProcessorBoot
+
+$ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
 
 $ apache-cassandra-3.9 » ./bin/cqlsh
 $ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};
@@ -86,5 +92,7 @@ $ cat cassandra-sink-distributed-products.properties
     connect.cassandra.username=cassandra
     connect.cassandra.password=cassandra
 
+
+$ ~/workspace/datamountaineer/kafka-connect-tools/build/libs(branch:master) » java -jar kafka-connect-cli-0.6-all.jar create cassandra-sink-products < /tmp/cassandra-sink-distributed-products.properties
 
 ```
