@@ -62,4 +62,29 @@ $ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-c
 
 $ sbt runMain AvroGenericProductConsumerBoot
 
+
+// alternatif to combine both connect in one use.
+$ ~/workspace/datamountaineer/kafka-connect-tools/build/libs(branch:master) » java -jar kafka-connect-cli-0.6-all.jar create product-csv-source < /tmp/connect-file-source.properties
+
+KAFKA CASSANDRA CONNECTOR
+
+$ apache-cassandra-3.9 » ./bin/cqlsh
+$ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};
+$ use demo;
+$ create table products (brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (brand, imageUrl));
+
+$ cat cassandra-sink-distributed-products.properties 
+
+    name=cassandra-sink-products
+    connector.class=com.datamountaineer.streamreactor.connect.cassandra.sink.CassandraSinkConnector
+    tasks.max=1
+    topics=product-csv-avro
+    connect.cassandra.export.route.query=INSERT INTO products SELECT * FROM product-csv-avro
+    connect.cassandra.contact.points=localhost
+    connect.cassandra.port=9042
+    connect.cassandra.key.space=demo
+    connect.cassandra.username=cassandra
+    connect.cassandra.password=cassandra
+
+
 ```

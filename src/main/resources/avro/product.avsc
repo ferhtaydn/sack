@@ -3,6 +3,10 @@
 	"name": "Product",
 	"namespace": "com.ferhtaydn.sack.model",
 	"fields": [
+	    {
+            "name": "barcode",
+            "type": "string"
+    	},
 		{
 			"name": "brand",
 			"type": "string"
