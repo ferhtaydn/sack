@@ -61,7 +61,7 @@ $  POST http://localhost:8081/subjects/product-csv-avro-value/versions
 $ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
 
 
-CASSANDRA SINK
+CASSANDRA SINK - Complete workflow
 // alternatif to combine both connect in one use.
 
 $ ~/workspace/datamountaineer/stream-reactor/kafka-connect-cassandra/build/libs(branch:master) » export CLASSPATH=kafka-connect-cassandra-0.2-3.0.1-all.jar
@@ -77,7 +77,7 @@ $ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-avro-console-consumer --z
 $ apache-cassandra-3.9 » ./bin/cqlsh
 $ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};
 $ use demo;
-$ create table products (brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (brand, imageUrl));
+$ create table products (barcode varchar, brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (barcode));
 
 $ cat cassandra-sink-distributed-products.properties 
 
