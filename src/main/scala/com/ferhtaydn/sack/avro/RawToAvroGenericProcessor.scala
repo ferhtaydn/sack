@@ -5,14 +5,12 @@ import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
 import com.ferhtaydn.sack.ProductSchema
-import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
-import scala.util.Random
 
 object RawToAvroGenericProcessorBoot extends App {
 
