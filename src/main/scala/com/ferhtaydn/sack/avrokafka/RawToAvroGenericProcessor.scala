@@ -1,18 +1,14 @@
-package com.ferhtaydn.sack.avro
+package com.ferhtaydn.sack.avrokafka
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
 import com.ferhtaydn.sack.ProductSchema
-import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
-import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
-import org.apache.avro.generic.GenericRecord
-import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
+import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
-import scala.util.Random
 
 object RawToAvroGenericProcessorBoot extends App {
 
@@ -35,7 +31,7 @@ object RawToAvroGenericProcessor {
     val producerConf = KafkaProducer.Conf(
       producerConfig,
       new StringSerializer,
-      GenericAvroSerializer(new CachedSchemaRegistryClient(producerConfig.getString("schema.registry.url"), 100))
+      new ByteArraySerializer
     )
 
     val system = ActorSystem("raw-to-avro-generic-processor-system")
@@ -52,7 +48,7 @@ object RawToAvroGenericProcessor {
 class RawToAvroGenericProcessor(
     kafkaConsumerConf: KafkaConsumer.Conf[String, String],
     consumerActorConf: KafkaConsumerActor.Conf,
-    kafkaProducerConf: KafkaProducer.Conf[String, GenericRecord]
+    kafkaProducerConf: KafkaProducer.Conf[String, Array[Byte]]
 ) extends Actor with ActorLogging {
 
   val recordsExt = ConsumerRecords.extractor[String, String]
@@ -86,9 +82,9 @@ class RawToAvroGenericProcessor(
 
   private def processRecords(records: ConsumerRecords[String, String]) = {
 
-    def prepareRecord(key: Option[String], value: String): (String, GenericRecord) = {
+    def prepareRecord(key: Option[String], value: String): (String, Array[Byte]) = {
       val p = ProductSchema.dummyProduct
-      (p.imageUrl, ProductSchema.productToRecord(p))
+      (p.imageUrl, ProductSchema.productAsData(p))
     }
 
     val transformedRecords = records.pairs.map {
@@ -99,7 +95,7 @@ class RawToAvroGenericProcessor(
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, GenericRecord](
+    producer ! ProducerRecords.fromKeyValues[String, Array[Byte]](
       outputTopic,
       transformedRecords,
       Some(records.offsets),

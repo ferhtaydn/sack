@@ -81,8 +81,7 @@ class RawToBinaryProcessor(
   private def processRecords(records: ConsumerRecords[String, String]) = {
 
     def prepareRecord(key: Option[String], value: String): (String, Array[Byte]) = {
-      val p = Product(java.util.UUID.randomUUID.toString, "brand" + Random.nextInt(10).toString,
-        1, 2, 3, 4, "http" + Random.nextInt(10).toString)
+      val p = ProductSchema.dummyProduct
       (p.imageUrl, ProductSchema.productAsBytes(p))
     }
 

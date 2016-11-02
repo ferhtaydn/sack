@@ -7,6 +7,8 @@ import org.apache.avro.Schema
 import com.ferhtaydn.sack.model.Product
 import org.apache.avro.generic.GenericRecord
 
+import scala.util.Random
+
 object ProductSchema {
   // Schema file as a input stream
   private val schemaFile = getClass.getResourceAsStream("/avro/product.avsc")
@@ -29,6 +31,14 @@ object ProductSchema {
   def productAsBytes(p: Product): Array[Byte] = {
     val baos = new ByteArrayOutputStream
     val output = AvroOutputStream.binary[Product](baos)
+    output.write(p)
+    output.close()
+    baos.toByteArray
+  }
+
+  def productAsData(p: Product): Array[Byte] = {
+    val baos = new ByteArrayOutputStream
+    val output = AvroOutputStream.data[Product](baos)
     output.write(p)
     output.close()
     baos.toByteArray
@@ -57,4 +67,7 @@ object ProductSchema {
     val format = RecordFormat[Product]
     format.from(productRecord)
   }
+
+  def dummyProduct = Product(java.util.UUID.randomUUID.toString, "brand" + Random.nextInt(10).toString,
+    1, 2, 3, 4, "http" + Random.nextInt(10).toString)
 }

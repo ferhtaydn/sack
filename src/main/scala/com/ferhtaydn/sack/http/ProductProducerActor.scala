@@ -34,8 +34,6 @@ class ProductProducerActor extends Actor with ActorLogging {
   case object OK
 
   def process(p: Product): Unit = {
-    val p = Product(java.util.UUID.randomUUID.toString, "brand" + Random.nextInt(10).toString,
-      1, 2, 3, 4, "http" + Random.nextInt(10).toString)
 
     val producerRecord = (p.imageUrl, ProductSchema.productToRecord(p))
 
