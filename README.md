@@ -70,14 +70,10 @@ $ ~/workspace/datamountaineer/kafka-connect-tools/build/libs(branch:master) » j
 
 $ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw --from-beginning
 
-$ sbt runMain com.ferhtaydn.sack.avro.RawToAvroGenericProcessorBoot
-
-$ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
-
 $ apache-cassandra-3.9 » ./bin/cqlsh
 $ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};
 $ use demo;
-$ create table products (barcode varchar, brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (barcode));
+$ cqlsh:demo> create table products (barcode varchar, brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (barcode));
 
 $ cat cassandra-sink-distributed-products.properties 
 
@@ -94,5 +90,11 @@ $ cat cassandra-sink-distributed-products.properties
 
 
 $ ~/workspace/datamountaineer/kafka-connect-tools/build/libs(branch:master) » java -jar kafka-connect-cli-0.6-all.jar create cassandra-sink-products < /tmp/cassandra-sink-distributed-products.properties
+
+$ sbt runMain com.ferhtaydn.sack.cassandra.RawToAvroGenericProcessorBoot
+
+$ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
+
+$ cqlsh:demo> select * from products;
 
 ```
