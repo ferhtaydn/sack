@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 object AvroGenericProductConsumerBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerAvro")
+  val consumerConfig = config.getConfig("kafka.consumer-avro")
 
   AvroGenericProductConsumer(consumerConfig)
 

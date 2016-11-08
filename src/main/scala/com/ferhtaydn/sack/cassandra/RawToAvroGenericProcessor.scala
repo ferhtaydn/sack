@@ -8,7 +8,7 @@ import com.ferhtaydn.sack.ProductSchema
 import com.typesafe.config.{ Config, ConfigFactory }
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
-import com.ferhtaydn.sack.TypesafeConfigExtensions._
+import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
 
 import scala.concurrent.duration._
 
@@ -20,8 +20,8 @@ import scala.collection.JavaConversions._
 object RawToAvroGenericProcessorBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerRaw")
-  val producerConfig = config.getConfig("producerAvro")
+  val consumerConfig = config.getConfig("kafka.consumer-raw")
+  val producerConfig = config.getConfig("kafka.producer-avro")
 
   RawToAvroGenericProcessor(consumerConfig, producerConfig)
 

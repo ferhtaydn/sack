@@ -5,18 +5,16 @@ import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
 import com.ferhtaydn.sack.ProductSchema
-import com.ferhtaydn.sack.model.Product
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
-import scala.util.Random
 
 object RawToBinaryProcessorBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerRaw")
-  val producerConfig = config.getConfig("producerBinary")
+  val consumerConfig = config.getConfig("kafka.consumer-raw")
+  val producerConfig = config.getConfig("kafka.producer-binary")
 
   RawToBinaryProcessor(consumerConfig, producerConfig)
 

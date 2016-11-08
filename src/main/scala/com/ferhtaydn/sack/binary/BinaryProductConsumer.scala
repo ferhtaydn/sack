@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 object BinaryProductConsumerBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerBinary")
+  val consumerConfig = config.getConfig("kafka.consumer-binary")
 
   BinaryProductConsumer(consumerConfig)
 

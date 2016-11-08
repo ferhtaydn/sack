@@ -15,8 +15,8 @@ import scala.concurrent.duration._
 object RawToAvroGenericProcessorBoot extends App {
 
   val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("consumerRaw")
-  val producerConfig = config.getConfig("producerAvro")
+  val consumerConfig = config.getConfig("kafka.consumer-raw")
+  val producerConfig = config.getConfig("kafka.producer-avro")
 
   RawToAvroGenericProcessor(consumerConfig, producerConfig)
 

@@ -1,7 +1,9 @@
-package com.ferhtaydn.sack
+package com.ferhtaydn.sack.settings
 
 import java.util.Properties
+
 import com.typesafe.config.Config
+
 import scala.collection.JavaConversions._
 import scala.collection.immutable._
 import scala.collection.mutable
@@ -11,7 +13,7 @@ import scala.collection.mutable
  * https://github.com/cakesolutions/scala-kafka-client/blob/master/client/src/main/scala/cakesolutions/kafka/TypesafeConfigExtensions.scala
  * Extensions added to Typesafe config class.
  */
-private object TypesafeConfigExtensions {
+object TypesafeConfigExtensions {
 
   implicit class RichConfig(val config: Config) extends AnyVal {
 
