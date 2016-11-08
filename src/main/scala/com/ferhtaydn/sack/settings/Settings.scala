@@ -9,22 +9,20 @@ class SettingsImpl(config: Config) extends Extension {
     private val kafkaConfig = config.getConfig("kafka")
 
     object Producer {
-      val producerConfig = kafkaConfig.getConfig("producer-avro")
+      val producerConfig = kafkaConfig.getConfig("producer")
 
       val bootstrapServers = producerConfig.getString("bootstrap.servers")
       val acks = producerConfig.getString("acks")
-      val keySerializer = producerConfig.getString("key.serializer")
-      val valueSerializer = producerConfig.getString("value.serializer")
       val schemaRegistryUrl = producerConfig.getString("schema.registry.url")
       val zookeeperConnect = producerConfig.getString("zookeeper.connect")
     }
 
     object Consumer {
-      val consumerConfig = kafkaConfig.getConfig("consumer-avro")
+
+      val consumerConfig = kafkaConfig.getConfig("consumer")
 
       val bootstrapServers = consumerConfig.getString("bootstrap.servers")
       val zookeeperConnect = consumerConfig.getString("zookeeper.connect")
-      val groupId = consumerConfig.getString("group.id")
       val autoCommit = consumerConfig.getBoolean("enable.auto.commit")
       val autoOffset = consumerConfig.getString("auto.offset.reset")
       val schemaRegistryUrl = consumerConfig.getString("schema.registry.url")
