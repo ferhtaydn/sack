@@ -40,8 +40,9 @@ libraryDependencies ++= Seq(
 
   "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
   "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
+  "com.typesafe.akka" %% "akka-testkit" % "2.4.11" % "test",
 
-  "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1"
+"com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1"
     excludeAll ExclusionRule(organization = "org.apache.avro"),
 
   "io.confluent" % "kafka-avro-serializer" % "3.0.1",
