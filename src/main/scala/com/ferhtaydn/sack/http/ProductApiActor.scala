@@ -4,27 +4,28 @@ import akka.actor.{ Actor, ActorLogging, Props }
 import cakesolutions.kafka.KafkaProducer
 import cakesolutions.kafka.akka.{ KafkaProducerActor, ProducerRecords }
 import com.ferhtaydn.sack.ProductSchema
-import com.ferhtaydn.sack.avro.GenericAvroSerializer
-import com.typesafe.config.ConfigFactory
-import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
-import org.apache.kafka.common.serialization.StringSerializer
 import com.ferhtaydn.sack.model.Product
 import com.ferhtaydn.sack.settings.SettingsActor
-import org.apache.avro.generic.GenericRecord
+import io.confluent.kafka.serializers.KafkaAvroSerializer
+import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
+import scala.collection.JavaConversions._
+import com.ferhtaydn.sack.http.Models._
 
 class ProductApiActor extends Actor with SettingsActor with ActorLogging {
 
   val outputTopic = "product-http-avro"
 
-  val config = ConfigFactory.load()
   val producerConfig = settings.Kafka.Producer.producerConfig
 
-  import settings.Kafka.Producer._
+  val kafkaAvroSerializerForKey = new KafkaAvroSerializer()
+  val kafkaAvroSerializerForValue = new KafkaAvroSerializer()
+  kafkaAvroSerializerForKey.configure(producerConfig.toPropertyMap, true)
+  kafkaAvroSerializerForValue.configure(producerConfig.toPropertyMap, false)
 
   val producerConf = KafkaProducer.Conf(
     producerConfig,
-    new StringSerializer,
-    GenericAvroSerializer(new CachedSchemaRegistryClient(schemaRegistryUrl, 100))
+    kafkaAvroSerializerForKey,
+    kafkaAvroSerializerForValue
   )
 
   val producer = context.actorOf(
@@ -32,15 +33,11 @@ class ProductApiActor extends Actor with SettingsActor with ActorLogging {
     "kafka-producer-actor"
   )
 
-  case object OK
-
-  case class Products(products: Seq[Product])
-
   def process(products: Seq[Product]): Unit = {
 
     val transformedProducts = products.map(p ⇒ (p.imageUrl, ProductSchema.productToRecord(p)))
 
-    producer ! ProducerRecords.fromKeyValues[String, GenericRecord](
+    producer ! ProducerRecords.fromKeyValues[Object, Object](
       outputTopic,
       transformedProducts,
       Some(OK),
@@ -51,6 +48,7 @@ class ProductApiActor extends Actor with SettingsActor with ActorLogging {
   override def receive: Receive = {
 
     case Products(products) ⇒
+      log.info(s"Received products: $products")
       process(products)
 
     case OK ⇒

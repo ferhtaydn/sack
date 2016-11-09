@@ -8,16 +8,11 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.ActorMaterializer
 import com.ferhtaydn.sack.model.Product
 import com.ferhtaydn.sack.settings.Settings
-import spray.json.DefaultJsonProtocol._
+import com.ferhtaydn.sack.http.Models._
 
 import scala.io.StdIn
 
 object WebServer extends App {
-
-  case class Products(products: List[Product])
-
-  implicit val productFormat = jsonFormat7(Product)
-  implicit val productsFormat = jsonFormat1(Products)
 
   implicit val system = ActorSystem("product-api-system")
   implicit val materializer = ActorMaterializer()
@@ -31,14 +26,14 @@ object WebServer extends App {
     path("product") {
       post {
         entity(as[Product]) { product ⇒
-          productApi ! Seq(product)
+          productApi ! Products(List(product))
           complete((StatusCodes.Accepted, "Product is saved to Kafka"))
         }
       }
     } ~
       path("products") {
         post {
-          entity(as[Seq[Product]]) { products ⇒
+          entity(as[Products]) { products ⇒
             productApi ! products
             complete((StatusCodes.Accepted, "Products are saved to Kafka"))
           }
