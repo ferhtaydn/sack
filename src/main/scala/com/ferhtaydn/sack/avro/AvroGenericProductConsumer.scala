@@ -3,47 +3,47 @@ package com.ferhtaydn.sack.avro
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.KafkaConsumer
 import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor }
-import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
-import com.ferhtaydn.sack.ProductSchema
-import com.typesafe.config.{ Config, ConfigFactory }
+import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
+import com.ferhtaydn.sack.settings.Settings
+import com.ferhtaydn.sack.{ Boot, ProductSchema }
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.concurrent.duration._
 
-object AvroGenericProductConsumerBoot extends App {
+object AvroGenericProductConsumerBoot extends App with Boot {
 
-  val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("kafka.consumer-avro")
+  val system = ActorSystem("avro-product-consumer-system")
+  val settings = Settings(system)
+  val consumerConfig = settings.Kafka.Consumer.consumerConfig
+  import settings.Kafka.Consumer._
 
-  AvroGenericProductConsumer(consumerConfig)
+  val consumerConf = KafkaConsumer.Conf(
+    new StringDeserializer,
+    GenericAvroDeserializer(new CachedSchemaRegistryClient(schemaRegistryUrl, 100)),
+    groupId = "csv-avro-consumer"
+  ).withConf(consumerConfig)
+
+  val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
+
+  system.actorOf(
+    AvroGenericProductConsumer.props(consumerConf, actorConf),
+    "avro-product-consumer-actor"
+  )
+
+  terminate(system)
 
 }
 
 object AvroGenericProductConsumer {
 
-  def apply(consumerConfig: Config): ActorRef = {
-
-    val consumerConf = KafkaConsumer.Conf(
-      consumerConfig,
-      new StringDeserializer,
-      GenericAvroDeserializer(
-        new CachedSchemaRegistryClient(consumerConfig.getString("schema.registry.url"), 100)
-      )
-    )
-
-    val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
-
-    val system = ActorSystem("avro-product-consumer-system")
-
-    system.actorOf(
-      Props(new AvroGenericProductConsumer(consumerConf, actorConf)),
-      "avro-product-consumer-actor"
-    )
-
+  def props(
+    consumerConf: KafkaConsumer.Conf[String, GenericRecord],
+    actorConf: KafkaConsumerActor.Conf
+  ): Props = {
+    Props(new AvroGenericProductConsumer(consumerConf, actorConf))
   }
-
 }
 
 class AvroGenericProductConsumer(
@@ -54,14 +54,34 @@ class AvroGenericProductConsumer(
   val recordsExt = ConsumerRecords.extractor[String, GenericRecord]
   val inputTopic = "product-csv-avro"
 
-  val consumerActor = context.actorOf(
-    KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
-    "kafka-consumer-actor"
-  )
+  var consumerActor: ActorRef = _
 
-  context.watch(consumerActor)
+  override def preStart(): Unit = {
 
-  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+    super.preStart()
+
+    consumerActor = context.actorOf(
+      KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
+      "kafka-consumer-actor"
+    )
+
+    context.watch(consumerActor)
+
+    consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+
+  }
+
+  override def postStop(): Unit = {
+
+    consumerActor ! Unsubscribe
+
+    context.children foreach { child ⇒
+      context.unwatch(child)
+      context.stop(child)
+    }
+
+    super.postStop()
+  }
 
   override def receive: Receive = {
 

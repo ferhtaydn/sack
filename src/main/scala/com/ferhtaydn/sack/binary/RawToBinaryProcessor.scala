@@ -1,42 +1,49 @@
 package com.ferhtaydn.sack.binary
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
-import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
+import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import com.ferhtaydn.sack.ProductSchema
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.settings.Settings
 import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
 
-object RawToBinaryProcessorBoot extends App {
+object RawToBinaryProcessorBoot extends App with Boot {
 
-  val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("kafka.consumer-raw")
-  val producerConfig = config.getConfig("kafka.producer-binary")
+  val system = ActorSystem("raw-to-binary-processor-system")
+  val settings = Settings(system)
+  val producerConfig = settings.Kafka.Producer.producerConfig
+  val consumerConfig = settings.Kafka.Consumer.consumerConfig
 
-  RawToBinaryProcessor(consumerConfig, producerConfig)
+  val consumerConf = KafkaConsumer.Conf(
+    new StringDeserializer,
+    new StringDeserializer,
+    groupId = "csv-raw-consumer"
+  ).withConf(consumerConfig)
+
+  val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
+
+  val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
+
+  system.actorOf(
+    RawToBinaryProcessor.props(consumerConf, actorConf, producerConf),
+    "raw-to-binary-processor-actor"
+  )
+
+  terminate(system)
 
 }
 
 object RawToBinaryProcessor {
 
-  def apply(consumerConfig: Config, producerConfig: Config): ActorRef = {
-
-    val consumerConf = KafkaConsumer.Conf(consumerConfig, new StringDeserializer, new StringDeserializer)
-
-    val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
-
-    val producerConf = KafkaProducer.Conf(producerConfig, new StringSerializer, new ByteArraySerializer)
-
-    val system = ActorSystem("raw-to-binary-processor-system")
-
-    system.actorOf(
-      Props(new RawToBinaryProcessor(consumerConf, actorConf, producerConf)),
-      "raw-to-binary-processor-actor"
-    )
-
+  def props(
+    consumerConf: KafkaConsumer.Conf[String, String],
+    actorConf: KafkaConsumerActor.Conf,
+    producerConf: KafkaProducer.Conf[String, Array[Byte]]
+  ): Props = {
+    Props(new RawToBinaryProcessor(consumerConf, actorConf, producerConf))
   }
 
 }
@@ -51,19 +58,42 @@ class RawToBinaryProcessor(
   val inputTopic = "product-csv-raw"
   val outputTopic = "product-csv-binary"
 
-  val consumerActor = context.actorOf(
-    KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
-    "kafka-consumer-actor"
-  )
+  var consumerActor: ActorRef = _
+  var producerActor: ActorRef = _
 
-  context.watch(consumerActor)
+  override def preStart(): Unit = {
 
-  val producer = context.actorOf(
-    KafkaProducerActor.props(kafkaProducerConf),
-    "kafka-producer-actor"
-  )
+    super.preStart()
 
-  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+    consumerActor = context.actorOf(
+      KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
+      "kafka-consumer-actor"
+    )
+
+    context.watch(consumerActor)
+
+    consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+
+    producerActor = context.actorOf(
+      KafkaProducerActor.props(kafkaProducerConf),
+      "kafka-producer-actor"
+    )
+
+    context.watch(producerActor)
+
+  }
+
+  override def postStop(): Unit = {
+
+    consumerActor ! Unsubscribe
+
+    context.children foreach { child ⇒
+      context.unwatch(child)
+      context.stop(child)
+    }
+
+    super.postStop()
+  }
 
   override def receive: Receive = {
 
@@ -91,7 +121,7 @@ class RawToBinaryProcessor(
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, Array[Byte]](
+    producerActor ! ProducerRecords.fromKeyValues[String, Array[Byte]](
       outputTopic,
       transformedRecords,
       Some(records.offsets),

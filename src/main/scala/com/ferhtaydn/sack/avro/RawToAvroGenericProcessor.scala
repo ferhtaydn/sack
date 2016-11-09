@@ -1,48 +1,56 @@
 package com.ferhtaydn.sack.avro
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
-import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
+import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import com.ferhtaydn.sack.ProductSchema
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.ferhtaydn.sack.settings.Settings
+import com.ferhtaydn.sack.{ Boot, ProductSchema }
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
 
 import scala.concurrent.duration._
 
-object RawToAvroGenericProcessorBoot extends App {
+object RawToAvroGenericProcessorBoot extends App with Boot {
 
-  val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("kafka.consumer-raw")
-  val producerConfig = config.getConfig("kafka.producer-avro")
+  val system = ActorSystem("raw-to-avro-generic-processor-system")
+  val settings = Settings(system)
+  import settings.Kafka.Producer._
+  val producerConfig = settings.Kafka.Producer.producerConfig
+  val consumerConfig = settings.Kafka.Consumer.consumerConfig
 
-  RawToAvroGenericProcessor(consumerConfig, producerConfig)
+  val consumerConf = KafkaConsumer.Conf(
+    new StringDeserializer,
+    new StringDeserializer,
+    groupId = "csv-raw-consumer"
+  ).withConf(consumerConfig)
+
+  val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
+
+  val producerConf = KafkaProducer.Conf(
+    producerConfig,
+    new StringSerializer,
+    GenericAvroSerializer(new CachedSchemaRegistryClient(schemaRegistryUrl, 100))
+  )
+
+  system.actorOf(
+    RawToAvroGenericProcessor.props(consumerConf, actorConf, producerConf),
+    "raw-to-avro-generic-processor-actor"
+  )
+
+  terminate(system)
 
 }
 
 object RawToAvroGenericProcessor {
 
-  def apply(consumerConfig: Config, producerConfig: Config): ActorRef = {
-
-    val consumerConf = KafkaConsumer.Conf(consumerConfig, new StringDeserializer, new StringDeserializer)
-
-    val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
-
-    val producerConf = KafkaProducer.Conf(
-      producerConfig,
-      new StringSerializer,
-      GenericAvroSerializer(new CachedSchemaRegistryClient(producerConfig.getString("schema.registry.url"), 100))
-    )
-
-    val system = ActorSystem("raw-to-avro-generic-processor-system")
-
-    system.actorOf(
-      Props(new RawToAvroGenericProcessor(consumerConf, actorConf, producerConf)),
-      "raw-to-avro-generic-processor-actor"
-    )
-
+  def props(
+    consumerConf: KafkaConsumer.Conf[String, String],
+    actorConf: KafkaConsumerActor.Conf,
+    producerConf: KafkaProducer.Conf[String, GenericRecord]
+  ): Props = {
+    Props(new RawToAvroGenericProcessor(consumerConf, actorConf, producerConf))
   }
 
 }
@@ -57,19 +65,42 @@ class RawToAvroGenericProcessor(
   val inputTopic = "product-csv-raw"
   val outputTopic = "product-csv-avro"
 
-  val consumerActor = context.actorOf(
-    KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
-    "kafka-consumer-actor"
-  )
+  var consumerActor: ActorRef = _
+  var producerActor: ActorRef = _
 
-  context.watch(consumerActor)
+  override def preStart(): Unit = {
 
-  val producer = context.actorOf(
-    KafkaProducerActor.props(kafkaProducerConf),
-    "kafka-producer-actor"
-  )
+    super.preStart()
 
-  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+    consumerActor = context.actorOf(
+      KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
+      "kafka-consumer-actor"
+    )
+
+    context.watch(consumerActor)
+
+    consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+
+    producerActor = context.actorOf(
+      KafkaProducerActor.props(kafkaProducerConf),
+      "kafka-producer-actor"
+    )
+
+    context.watch(producerActor)
+
+  }
+
+  override def postStop(): Unit = {
+
+    consumerActor ! Unsubscribe
+
+    context.children foreach { child ⇒
+      context.unwatch(child)
+      context.stop(child)
+    }
+
+    super.postStop()
+  }
 
   override def receive: Receive = {
 
@@ -97,7 +128,7 @@ class RawToAvroGenericProcessor(
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
-    producer ! ProducerRecords.fromKeyValues[String, GenericRecord](
+    producerActor ! ProducerRecords.fromKeyValues[String, GenericRecord](
       outputTopic,
       transformedRecords,
       Some(records.offsets),

@@ -2,40 +2,43 @@ package com.ferhtaydn.sack.binary
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.KafkaConsumer
-import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe }
+import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor }
-import com.ferhtaydn.sack.ProductSchema
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.ferhtaydn.sack.settings.Settings
+import com.ferhtaydn.sack.{ Boot, ProductSchema }
 import org.apache.kafka.common.serialization.{ ByteArrayDeserializer, StringDeserializer }
 
 import scala.concurrent.duration._
 
-object BinaryProductConsumerBoot extends App {
+object BinaryProductConsumerBoot extends App with Boot {
 
-  val config = ConfigFactory.load()
-  val consumerConfig = config.getConfig("kafka.consumer-binary")
+  val system = ActorSystem("binary-product-consumer-system")
+  val settings = Settings(system)
+  val consumerConfig = settings.Kafka.Consumer.consumerConfig
 
-  BinaryProductConsumer(consumerConfig)
+  val consumerConf = KafkaConsumer.Conf(
+    new StringDeserializer,
+    new ByteArrayDeserializer,
+    groupId = "csv-binary-consumer"
+  ).withConf(consumerConfig)
+
+  val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
+
+  system.actorOf(
+    BinaryProductConsumer.props(consumerConf, actorConf),
+    "binary-product-consumer-actor"
+  )
+
+  terminate(system)
 
 }
 
 object BinaryProductConsumer {
 
-  def apply(consumerConfig: Config): ActorRef = {
-
-    val consumerConf = KafkaConsumer.Conf(consumerConfig, new StringDeserializer, new ByteArrayDeserializer)
-
-    val actorConf = KafkaConsumerActor.Conf(1.seconds, 3.seconds)
-
-    val system = ActorSystem("binary-product-consumer-system")
-
-    system.actorOf(
-      Props(new BinaryProductConsumer(consumerConf, actorConf)),
-      "binary-product-consumer-actor"
-    )
-
-  }
-
+  def props(
+    consumerConf: KafkaConsumer.Conf[String, Array[Byte]],
+    actorConf: KafkaConsumerActor.Conf
+  ): Props = Props(new BinaryProductConsumer(consumerConf, actorConf))
 }
 
 class BinaryProductConsumer(
@@ -46,14 +49,34 @@ class BinaryProductConsumer(
   val recordsExt = ConsumerRecords.extractor[String, Array[Byte]]
   val inputTopic = "product-csv-binary"
 
-  val consumerActor = context.actorOf(
-    KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
-    "kafka-consumer-actor"
-  )
+  var consumerActor: ActorRef = _
 
-  context.watch(consumerActor)
+  override def preStart(): Unit = {
 
-  consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+    super.preStart()
+
+    consumerActor = context.actorOf(
+      KafkaConsumerActor.props(kafkaConsumerConf, consumerActorConf, self),
+      "kafka-consumer-actor"
+    )
+
+    context.watch(consumerActor)
+
+    consumerActor ! Subscribe.AutoPartition(List(inputTopic))
+
+  }
+
+  override def postStop(): Unit = {
+
+    consumerActor ! Unsubscribe
+
+    context.children foreach { child ⇒
+      context.unwatch(child)
+      context.stop(child)
+    }
+
+    super.postStop()
+  }
 
   override def receive: Receive = {
 
