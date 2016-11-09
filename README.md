@@ -80,8 +80,8 @@ $ cat cassandra-sink-distributed-products.properties
     name=cassandra-sink-products
     connector.class=com.datamountaineer.streamreactor.connect.cassandra.sink.CassandraSinkConnector
     tasks.max=1
-    topics=product-csv-avro
-    connect.cassandra.export.route.query=INSERT INTO products SELECT * FROM product-csv-avro
+    topics=product-csv-avro,product-http-avro
+    connect.cassandra.export.route.query=INSERT INTO products SELECT * FROM product-csv-avro;INSERT INTO products SELECT * FROM product-http-avro
     connect.cassandra.contact.points=localhost
     connect.cassandra.port=9042
     connect.cassandra.key.space=demo
