@@ -16,6 +16,10 @@ resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
   "confluent" at "http://packages.confluent.io/maven/",
   "confluent-repository" at "http://packages.confluent.io/maven/"
+  //"Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
+  //Resolver.sonatypeRepo("snapshots"),
+  //Resolver.sonatypeRepo("releases"),
+  //Resolver.bintrayRepo("hseeberger", "maven")
 )
 
 resolvers += Resolver.bintrayRepo("cakesolutions", "maven")

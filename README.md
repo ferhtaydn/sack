@@ -75,6 +75,44 @@ $ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replicat
 $ use demo;
 $ cqlsh:demo> create table products (barcode varchar, brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (barcode));
 
+create table products (
+ brand varchar, 
+ supplierId varchar, 
+ productType varchar, 
+ gender varchar, 
+ ageGroup varchar, 
+ category varchar, 
+ productFeature varchar, 
+ productCode varchar,
+ webProductDesc varchar, 
+ productDesc varchar, 
+ supplierColor varchar, 
+ colorFeature varchar, 
+ barcode varchar, 
+ supplierSize varchar, 
+ dsmSize varchar, 
+ stockUnit varchar, 
+ ftStockQuantity int, 
+ ftPurchasePriceVatInc double, 
+ psfVatInc double, 
+ tsfVatInc double, 
+ vatRate double, 
+ material varchar, 
+ composition varchar,
+ productionPlace varchar, 
+ productWeightKg double,
+ productionContentWriting varchar,
+ productDetail varchar,
+ sampleSize varchar,
+ modelSize varchar,
+ supplierProductCode varchar,
+ project varchar,
+ theme varchar,
+ trendLevel varchar,
+ designer varchar,
+ imageUrl varchar,
+ PRIMARY KEY (barcode));
+
 $ cat cassandra-sink-distributed-products.properties 
 
     name=cassandra-sink-products

@@ -4,10 +4,11 @@ import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
+import com.ferhtaydn.sack.http.Models.OK
+import com.ferhtaydn.sack.model.TProduct
 import com.ferhtaydn.sack.{ Boot, ProductSchema }
 import com.ferhtaydn.sack.settings.Settings
-import io.confluent.kafka.serializers.KafkaAvroSerializer
-import org.apache.kafka.common.serialization.StringDeserializer
+import io.confluent.kafka.serializers.{ KafkaAvroDeserializer, KafkaAvroSerializer }
 import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
 
 import scala.concurrent.duration._
@@ -24,9 +25,14 @@ object RawToAvroGenericProcessorBoot extends App with Boot {
   val producerConfig = settings.Kafka.Producer.producerConfig
   val consumerConfig = settings.Kafka.Consumer.consumerConfig
 
+  val kafkaAvroDeserializerForKey = new KafkaAvroDeserializer()
+  val kafkaAvroDeserializerForValue = new KafkaAvroDeserializer()
+  kafkaAvroDeserializerForKey.configure(consumerConfig.toPropertyMap, true)
+  kafkaAvroDeserializerForValue.configure(consumerConfig.toPropertyMap, false)
+
   val consumerConf = KafkaConsumer.Conf(
-    new StringDeserializer,
-    new StringDeserializer,
+    kafkaAvroDeserializerForKey,
+    kafkaAvroDeserializerForValue,
     groupId = "csv-raw-consumer"
   ).withConf(consumerConfig)
 
@@ -55,7 +61,7 @@ object RawToAvroGenericProcessorBoot extends App with Boot {
 object RawToAvroGenericProcessor {
 
   def props(
-    consumerConf: KafkaConsumer.Conf[String, String],
+    consumerConf: KafkaConsumer.Conf[Object, Object],
     actorConf: KafkaConsumerActor.Conf,
     producerConf: KafkaProducer.Conf[Object, Object]
   ): Props = {
@@ -64,14 +70,15 @@ object RawToAvroGenericProcessor {
 }
 
 class RawToAvroGenericProcessor(
-    kafkaConsumerConf: KafkaConsumer.Conf[String, String],
+    kafkaConsumerConf: KafkaConsumer.Conf[Object, Object],
     consumerActorConf: KafkaConsumerActor.Conf,
     kafkaProducerConf: KafkaProducer.Conf[Object, Object]
 ) extends Actor with ActorLogging {
 
-  val recordsExt = ConsumerRecords.extractor[String, String]
+  val recordsExt = ConsumerRecords.extractor[Object, Object]
   val inputTopic = "product-csv-raw"
   val outputTopic = "product-csv-avro"
+  val invalidOutputTopic = "product-csv-avro-invalid"
 
   var consumerActor: ActorRef = _
   var producerActor: ActorRef = _
@@ -119,20 +126,26 @@ class RawToAvroGenericProcessor(
     case o: Offsets ⇒
       log.info(s"Response from KafkaProducer, offsets: $o")
       consumerActor ! Confirm(o, commit = false)
+
+    case OK ⇒
+      log.info(s"Response for invalid values")
   }
 
-  private def processRecords(records: ConsumerRecords[String, String]) = {
+  private def processRecords(records: ConsumerRecords[Object, Object]) = {
 
-    def prepareRecord(key: Option[String], value: String): (Object, Object) = {
-      val p = ProductSchema.dummyProduct
-      (p.imageUrl, ProductSchema.productToRecord(p))
-    }
-
-    val transformedRecords = records.pairs.map {
-      case (key, value) ⇒
+    val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[TProduct])) {
+      case ((v, p), (key, value)) ⇒
         log.info(s"Received [$key, $value]")
-        prepareRecord(key, value)
+        ProductSchema.createTProduct(value.asInstanceOf[String]) match {
+          case None     ⇒ (value.asInstanceOf[String] +: v, p)
+          case Some(tp) ⇒ (v, tp +: p)
+        }
     }
+
+    val transformedRecords = validRecords.map(r ⇒ (r.barcode, ProductSchema.tProductToRecord(r)))
+
+    log.info(s"transformedRecords: $transformedRecords")
+    log.info(s"invalid values: $invalidValues")
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 
@@ -140,6 +153,13 @@ class RawToAvroGenericProcessor(
       outputTopic,
       transformedRecords,
       Some(records.offsets),
+      None
+    )
+
+    producerActor ! ProducerRecords.fromKeyValues[Object, Object](
+      invalidOutputTopic,
+      invalidValues.map(s ⇒ (s, s)),
+      Some(OK),
       None
     )
   }
