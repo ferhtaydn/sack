@@ -13,16 +13,13 @@ scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 resolvers ++= Seq(
-  "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
   "confluent" at "http://packages.confluent.io/maven/",
-  "confluent-repository" at "http://packages.confluent.io/maven/"
-  //"Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
-  //Resolver.sonatypeRepo("snapshots"),
-  //Resolver.sonatypeRepo("releases"),
-  //Resolver.bintrayRepo("hseeberger", "maven")
+  "confluent-repository" at "http://packages.confluent.io/maven/",
+  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
+  Resolver.bintrayRepo("cakesolutions", "maven"),
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("releases")
 )
-
-resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
 
 libraryDependencies ++= Seq(
   "net.cakesolutions" %% "scala-kafka-client" % "0.10.0.0"
@@ -43,9 +40,7 @@ libraryDependencies ++= Seq(
     excludeAll ExclusionRule(organization = "org.apache.kafka"),
 
   "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
-  //"com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.11" % "test",
-
   "io.circe"          %% "circe-generic"          % "0.5.2",
   "de.heikoseeberger" %% "akka-http-circe"        % "1.10.1",
 

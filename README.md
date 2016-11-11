@@ -1,9 +1,14 @@
 SACK - SMACK without Mesos
 
-This project is a kind of PoC to develop simple flows with 
-(eventually) Spark, Akka, Cassandra, and Kafka. 
+This project is a kind of PoC to develop simple flows with (eventually) Spark, Akka, Cassandra, and Kafka. 
 
-It uses confluent.io version of Kafka.
+confluent.io stack is used.
+
+> simple csv file is consumed by Kafka FileStreamSource connector to a raw topic,
+> each line is tried to be converted to a Product class,
+> successful records are consumed by cassandra sink connector to the products table,
+> invalid lines are stored in a failure topic to be able to investigate later,
+> also, there is an http layer to post products to http topic that is also consumed by cassandra sink connector to the products table.
 
 ```
 $ cd confluent-3.0.1
@@ -13,8 +18,6 @@ $ ./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
 $ ./bin/kafka-server-start ./etc/kafka/server.properties
 
 $ ./bin/schema-registry-start ./etc/schema-registry/schema-registry.properties
-
-$ ./bin/connect-standalone ./etc/schema-registry/connect-avro-standalone.properties /tmp/connect-file-source.properties
 
 $ cat /tmp/connect-file-source.properties
     
@@ -26,43 +29,7 @@ $ cat /tmp/connect-file-source.properties
 
 $ ./bin/kafka-topics --list --zookeeper localhost:2181
 
-// RawToRawProcessor.scala
-
-$ ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw --from-beginning
-
-// not required, auto create when RawProductConsumerBoot works
-// $ ./bin/kafka-topics --zookeeper localhost:2181 --create --topic product-csv-raw-uppercase --partitions 1 --replication-factor 1
-
-$ ./bin/kafka-console-consumer --zookeeper localhost:2181 --topic product-csv-raw-uppercase --from-beginning
-
-$ sbt runMain RawToRawProcessorBoot
-
-
-// RawToAvroGenericProcessor.scala
-
-$ sbt runMain com.ferhtaydn.sack.avro.RawToAvroGenericProcessorBoot
-
-// NOT REQUIRED, the topic is auto created with schema registration
-$ ./bin/kafka-topics --zookeeper localhost:2181 --create --topic product-csv-avro --partitions 1 --replication-factor 1
-
-// NOT REQUIRED, the topic is auto created with schema registration
-$  POST http://localhost:8081/subjects/product-csv-avro-key/versions
-   
-   {
-     "schema": "{\"type\": \"string\"}"
-   }
-
-$  POST http://localhost:8081/subjects/product-csv-avro-value/versions
-   
-   {
-   	"schema": "{\"type\":\"record\",\"name\":\"Product\",\"namespace\":\"com.ferhtaydn.sack.model\",\"fields\":[{\"name\":\"brand\",\"type\":\"string\"},{\"name\":\"supplierId\",\"type\":\"int\"},{\"name\":\"productType\",\"type\":\"int\"},{\"name\":\"gender\",\"type\":\"int\"},{\"name\":\"category\",\"type\":\"int\"},{\"name\":\"imageUrl\",\"type\":\"string\"}]}"
-   }
-
 $ ./bin/kafka-avro-console-consumer --zookeeper localhost:2181 --topic product-csv-avro --from-beginning
-
-
-CASSANDRA SINK - Complete workflow
-// alternatif to combine both connect in one use.
 
 $ ~/workspace/datamountaineer/stream-reactor/kafka-connect-cassandra/build/libs(branch:master) » export CLASSPATH=kafka-connect-cassandra-0.2-3.0.1-all.jar
 $ ~/workspace/datamountaineer/stream-reactor/kafka-connect-cassandra/build/libs(branch:master) » ~/workspace/confluent/confluent-3.0.1/bin/connect-distributed /tmp/connect-distributed.properties
@@ -73,45 +40,44 @@ $ ~/workspace/confluent/confluent-3.0.1 » ./bin/kafka-console-consumer --zookee
 $ apache-cassandra-3.9 » ./bin/cqlsh
 $ CREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 3};
 $ use demo;
-$ cqlsh:demo> create table products (barcode varchar, brand varchar, supplierId int, productType int, gender int, category int, imageUrl varchar, PRIMARY KEY (barcode));
-
-create table products (
- brand varchar, 
- supplierId varchar, 
- productType varchar, 
- gender varchar, 
- ageGroup varchar, 
- category varchar, 
- productFeature varchar, 
- productCode varchar,
- webProductDesc varchar, 
- productDesc varchar, 
- supplierColor varchar, 
- colorFeature varchar, 
- barcode varchar, 
- supplierSize varchar, 
- dsmSize varchar, 
- stockUnit varchar, 
- ftStockQuantity int, 
- ftPurchasePriceVatInc double, 
- psfVatInc double, 
- tsfVatInc double, 
- vatRate double, 
- material varchar, 
- composition varchar,
- productionPlace varchar, 
- productWeightKg double,
- productionContentWriting varchar,
- productDetail varchar,
- sampleSize varchar,
- modelSize varchar,
- supplierProductCode varchar,
- project varchar,
- theme varchar,
- trendLevel varchar,
- designer varchar,
- imageUrl varchar,
- PRIMARY KEY (barcode));
+$ cqlsh:demo>
+        create table products (
+         brand varchar, 
+         supplierId varchar, 
+         productType varchar, 
+         gender varchar, 
+         ageGroup varchar, 
+         category varchar, 
+         productFeature varchar, 
+         productCode varchar,
+         webProductDesc varchar, 
+         productDesc varchar, 
+         supplierColor varchar, 
+         colorFeature varchar, 
+         barcode varchar, 
+         supplierSize varchar, 
+         dsmSize varchar, 
+         stockUnit varchar, 
+         ftStockQuantity int, 
+         ftPurchasePriceVatInc double, 
+         psfVatInc double, 
+         tsfVatInc double, 
+         vatRate double, 
+         material varchar, 
+         composition varchar,
+         productionPlace varchar, 
+         productWeightKg double,
+         productionContentWriting varchar,
+         productDetail varchar,
+         sampleSize varchar,
+         modelSize varchar,
+         supplierProductCode varchar,
+         project varchar,
+         theme varchar,
+         trendLevel varchar,
+         designer varchar,
+         imageUrl varchar,
+         PRIMARY KEY (barcode));
 
 $ cat cassandra-sink-distributed-products.properties 
 
