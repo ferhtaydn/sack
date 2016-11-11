@@ -58,6 +58,7 @@ libraryDependencies ++= Seq(
     exclude("org.slf4j", "log4j-over-slf4j")
     exclude("org.slf4j", "slf4j-api"),
 
+  "com.chuusai" %% "shapeless" % "2.3.2",
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.3" % "test"
 )

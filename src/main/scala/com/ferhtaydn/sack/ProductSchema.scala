@@ -2,12 +2,13 @@ package com.ferhtaydn.sack
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import com.ferhtaydn.sack.csv.CsvParser
 import com.sksamuel.avro4s.{ AvroInputStream, AvroOutputStream, RecordFormat, SchemaFor }
 import org.apache.avro.Schema
 import com.ferhtaydn.sack.model.Product
 import org.apache.avro.generic.GenericRecord
 
-import scala.util.Try
+import scala.util.{ Success, Try }
 
 //noinspection ScalaStyle
 object ProductSchema {
@@ -73,121 +74,41 @@ object ProductSchema {
 
     println(s"current value: $s")
 
-    val arr = s.split(",")
+    val arr = s.split(",", -1)
 
     println(s"current arr: ${arr.toList} \n ${arr.length}")
 
-    if (arr.length > 33) {
+    CsvParser[Product].parse(arr.toSeq).toOption.filter { p ⇒
 
-      val brand = arr(0)
-      val supplierId = arr(1)
-      val productType = arr(2)
-      val gender = arr(3)
-      val ageGroup = arr(4)
-      val category = arr(5)
-      val productFeature = arr(6)
-      val productCode = arr(7)
-      val webProductDesc = arr(8)
-      val productDesc = arr(9)
-      val supplierColor = arr(10)
-      val colorFeature = arr(11)
-      val barcode = arr(12)
-      val supplierSize = arr(13)
-      val dsmSize = arr(14)
-      val stockUnit = arr(15)
-      val ftStockQuantity = arr(16)
-      val ftPurchasePriceVatInc = arr(17)
-      val psfVatInc = arr(18)
-      val tsfVatInc = arr(19)
-      val vatRate = arr(20)
-      val material = arr(21)
-      val composition = arr(22)
-      val productionPlace = arr(23)
-      val productWeightKg = arr(24)
-      val productionContentWriting = arr(25)
-      val productDetail = arr(26)
-      val sampleSize = arr(27)
-      val modelSize = arr(28)
-      val supplierProductCode = arr(29)
-      val project = arr(30)
-      val theme = arr(31)
-      val trendLevel = arr(32)
-      val designer = arr(33)
-      val imageUrl = if (arr.length == 35) arr(34) else ""
+      p.brand.nonEmpty && p.brand.length <= 30 &&
+        p.supplierId.nonEmpty && p.supplierId.length <= 50 && (p.supplierId.toLong > 0) &&
+        p.productType.nonEmpty && p.productType.length <= 50 &&
+        p.gender.exists(_.length <= 10) &&
+        p.ageGroup.exists(_.length <= 3000) &&
+        p.category.exists(_.length <= 300) &&
+        p.productFeature.nonEmpty && p.productFeature.length <= 30 &&
+        p.productCode.nonEmpty && p.productCode.length <= 30 &&
+        p.webProductDesc.nonEmpty && p.webProductDesc.length <= 100 &&
+        p.productDesc.nonEmpty && p.productDesc.length <= 100 &&
+        p.supplierColor.nonEmpty && p.supplierColor.length <= 50 &&
+        p.colorFeature.exists(_.length <= 5) &&
+        p.barcode.nonEmpty && p.barcode.length <= 20 &&
+        p.supplierSize.nonEmpty && p.supplierSize.length <= 50 &&
+        p.dsmSize.nonEmpty && p.dsmSize.length <= 20 &&
+        p.stockUnit.exists(_.length <= 10) &&
+        p.material.exists(_.length <= 30) &&
+        p.composition.exists(_.length <= 50) &&
+        p.productionPlace.exists(_.length <= 10) &&
+        p.productionContentWriting.exists(_.length <= 4000) &&
+        p.productDetail.exists(_.length <= 100) &&
+        p.sampleSize.exists(_.length <= 100) &&
+        p.modelSize.exists(_.length <= 100) &&
+        p.supplierProductCode.exists(_.length <= 30) &&
+        p.project.exists(_.length <= 50) &&
+        p.theme.exists(_.length <= 20) &&
+        p.trendLevel.exists(_.length <= 10) &&
+        p.designer.exists(_.length <= 20)
 
-      if (brand.nonEmpty && brand.length <= 30 &&
-        supplierId.nonEmpty && supplierId.length <= 50 && Try(supplierId.toLong).toOption.exists(id ⇒ id > 0) &&
-        productType.nonEmpty && productType.length <= 50 &&
-        gender.length <= 10 &&
-        ageGroup.length <= 300 &&
-        category.length <= 300 &&
-        productFeature.nonEmpty && productFeature.length <= 30 &&
-        productCode.nonEmpty && productCode.length <= 30 &&
-        webProductDesc.nonEmpty && webProductDesc.length <= 100 &&
-        productDesc.nonEmpty && productDesc.length <= 100 &&
-        supplierColor.nonEmpty && supplierColor.length <= 50 &&
-        colorFeature.length <= 5 &&
-        barcode.nonEmpty && barcode.length <= 20 &&
-        supplierSize.nonEmpty && supplierSize.length <= 50 &&
-        dsmSize.nonEmpty && dsmSize.length <= 20 &&
-        stockUnit.length <= 10 &&
-        material.length <= 30 &&
-        composition.length <= 50 &&
-        productionPlace.length <= 10 &&
-        productionContentWriting.length <= 4000 &&
-        productDetail.length <= 100 &&
-        sampleSize.length <= 100 &&
-        modelSize.length <= 100 &&
-        supplierProductCode.length <= 30 &&
-        project.length <= 50 &&
-        theme.length <= 20 &&
-        trendLevel.length <= 10 &&
-        designer.length <= 20) {
-
-        val tp = Product(
-          brand,
-          supplierId,
-          productType,
-          if (gender.nonEmpty) Some(gender) else None,
-          if (ageGroup.nonEmpty) Some(ageGroup) else None,
-          if (category.nonEmpty) Some(category) else None,
-          productFeature,
-          productCode,
-          webProductDesc,
-          productDesc,
-          supplierColor,
-          if (colorFeature.nonEmpty) Some(colorFeature) else None,
-          barcode,
-          supplierSize,
-          dsmSize,
-          if (stockUnit.nonEmpty) Some(stockUnit) else None,
-          Try(ftStockQuantity.toInt).toOption,
-          Try(ftPurchasePriceVatInc.toDouble).toOption,
-          Try(psfVatInc.toDouble).toOption,
-          Try(tsfVatInc.toDouble).toOption,
-          Try(vatRate.toDouble).toOption,
-          if (material.nonEmpty) Some(material) else None,
-          if (composition.nonEmpty) Some(composition) else None,
-          if (productionPlace.nonEmpty) Some(productionPlace) else None,
-          Try(productWeightKg.toDouble).toOption,
-          if (productionContentWriting.nonEmpty) Some(productionContentWriting) else None,
-          if (productDetail.nonEmpty) Some(productDetail) else None,
-          if (sampleSize.nonEmpty) Some(sampleSize) else None,
-          if (modelSize.nonEmpty) Some(modelSize) else None,
-          if (supplierProductCode.nonEmpty) Some(supplierProductCode) else None,
-          if (project.nonEmpty) Some(project) else None,
-          if (theme.nonEmpty) Some(theme) else None,
-          if (trendLevel.nonEmpty) Some(trendLevel) else None,
-          if (designer.nonEmpty) Some(designer) else None,
-          if (imageUrl.nonEmpty) Some(imageUrl) else None
-        )
-
-        Some(tp)
-
-      } else None
-
-    } else {
-      None
     }
   }
 
