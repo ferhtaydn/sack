@@ -88,6 +88,11 @@ object ProductSchema {
     format.from(productRecord)
   }
 
+  def tproductFromRecord(productRecord: GenericRecord): TProduct = {
+    val format = RecordFormat[TProduct]
+    format.from(productRecord)
+  }
+
   def createTProduct(s: String): Option[TProduct] = {
 
     println(s"current value: $s")
