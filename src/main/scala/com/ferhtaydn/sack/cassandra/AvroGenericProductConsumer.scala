@@ -102,7 +102,7 @@ class AvroGenericProductConsumer(
     records.pairs.foreach {
       case (key, value) ⇒
         log.info(s"Received [$key, $value]")
-        log.info(s"Received [$key, ${ProductSchema.tproductFromRecord(value.asInstanceOf[GenericRecord])}]")
+        log.info(s"Received [$key, ${ProductSchema.productFromRecord(value.asInstanceOf[GenericRecord])}]")
     }
 
     log.info(s"Batch complete, offsets: ${records.offsets}")

@@ -4,10 +4,10 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import com.sksamuel.avro4s.{ AvroInputStream, AvroOutputStream, RecordFormat, SchemaFor }
 import org.apache.avro.Schema
-import com.ferhtaydn.sack.model.{ Product, TProduct }
+import com.ferhtaydn.sack.model.Product
 import org.apache.avro.generic.GenericRecord
 
-import scala.util.{ Random, Try }
+import scala.util.Try
 
 //noinspection ScalaStyle
 object ProductSchema {
@@ -27,20 +27,6 @@ object ProductSchema {
   implicit val productSchemaImplicit: SchemaFor[Product] =
     new SchemaFor[Product] {
       override def apply(): Schema = productSchema
-    }
-
-  // Schema file as a input stream
-  private val tSchemaFile = getClass.getResourceAsStream("/avro/tproduct.avsc")
-
-  // Schema parsed from the schema file
-  val tProductSchema: Schema = {
-    val schemaParser = new Schema.Parser
-    schemaParser.parse(tSchemaFile)
-  }
-
-  implicit val tProductSchemaImplicit: SchemaFor[TProduct] =
-    new SchemaFor[TProduct] {
-      override def apply(): Schema = tProductSchema
     }
 
   def productAsBytes(p: Product): Array[Byte] = {
@@ -78,22 +64,12 @@ object ProductSchema {
     format.to(p)
   }
 
-  def tProductToRecord(p: TProduct): GenericRecord = {
-    val format = RecordFormat[TProduct]
-    format.to(p)
-  }
-
   def productFromRecord(productRecord: GenericRecord): Product = {
     val format = RecordFormat[Product]
     format.from(productRecord)
   }
 
-  def tproductFromRecord(productRecord: GenericRecord): TProduct = {
-    val format = RecordFormat[TProduct]
-    format.from(productRecord)
-  }
-
-  def createTProduct(s: String): Option[TProduct] = {
+  def createProduct(s: String): Option[Product] = {
 
     println(s"current value: $s")
 
@@ -168,7 +144,7 @@ object ProductSchema {
         trendLevel.length <= 10 &&
         designer.length <= 20) {
 
-        val tp = TProduct(
+        val tp = Product(
           brand,
           supplierId,
           productType,
@@ -215,6 +191,41 @@ object ProductSchema {
     }
   }
 
-  def dummyProduct = Product(java.util.UUID.randomUUID.toString, "brand" + Random.nextInt(10).toString,
-    1, 2, 3, 4, "http" + Random.nextInt(10).toString)
+  def dummyProduct = Product(
+    brand = "Mees",
+    supplierId = "59",
+    productType = "2",
+    gender = Some("1"),
+    ageGroup = Some("11"),
+    category = Some("3021"),
+    productFeature = "A13",
+    productCode = "TRED_IUH2",
+    webProductDesc = "Web Ürün Tanımı",
+    productDesc = "Ürün Tanımı",
+    supplierColor = "TASSS",
+    colorFeature = Some("C01"),
+    barcode = java.util.UUID.randomUUID.toString,
+    supplierSize = "34",
+    dsmSize = "B20",
+    stockUnit = Some("Adet"),
+    ftStockQuantity = Some(1),
+    ftPurchasePriceVatInc = Some(10),
+    psfVatInc = Some(20),
+    tsfVatInc = Some(15),
+    vatRate = Some(18),
+    material = Some("Materyal"),
+    composition = Some("Kompozisyon"),
+    productionPlace = Some("IT"),
+    productWeightKg = Some(1),
+    productionContentWriting = Some("Ürün İçerik Yazısı"),
+    productDetail = Some("Ürün Detayı"),
+    sampleSize = Some("Numune Bedeni"),
+    modelSize = Some("Manken Ölçüsü"),
+    supplierProductCode = Some("Tedarikçi Ürün Kodu"),
+    project = Some("Proje"),
+    theme = Some("Tema"),
+    trendLevel = Some("TF02"),
+    designer = Some("Tasarımcı"),
+    imageUrl = None
+  )
 }

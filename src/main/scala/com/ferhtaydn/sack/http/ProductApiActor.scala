@@ -4,13 +4,13 @@ import akka.actor.{ Actor, ActorLogging, Props }
 import cakesolutions.kafka.KafkaProducer
 import cakesolutions.kafka.akka.{ KafkaProducerActor, ProducerRecords }
 import com.ferhtaydn.sack.ProductSchema
-import com.ferhtaydn.sack.model.{ Product, TProduct }
+import com.ferhtaydn.sack.http.ProductApiActor.OK
+import com.ferhtaydn.sack.model.Product
 import com.ferhtaydn.sack.settings.SettingsActor
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
 
 import scala.collection.JavaConversions._
-import com.ferhtaydn.sack.http.Models._
 
 class ProductApiActor extends Actor with SettingsActor with ActorLogging {
 
@@ -36,19 +36,7 @@ class ProductApiActor extends Actor with SettingsActor with ActorLogging {
 
   def process(products: Seq[Product]): Unit = {
 
-    val transformedProducts = products.map(p ⇒ (p.imageUrl, ProductSchema.productToRecord(p)))
-
-    producer ! ProducerRecords.fromKeyValues[Object, Object](
-      outputTopic,
-      transformedProducts,
-      Some(OK),
-      None
-    )
-  }
-
-  def tprocess(products: Seq[TProduct]): Unit = {
-
-    val transformedProducts = products.map(p ⇒ (p.barcode, ProductSchema.tProductToRecord(p)))
+    val transformedProducts = products.map(p ⇒ (p.barcode, ProductSchema.productToRecord(p)))
 
     producer ! ProducerRecords.fromKeyValues[Object, Object](
       outputTopic,
@@ -64,16 +52,14 @@ class ProductApiActor extends Actor with SettingsActor with ActorLogging {
       log.info(s"Received products: $products")
       process(products)
 
-    case TProducts(tproducts) ⇒
-      log.info(s"Received tproducts: $tproducts")
-      tprocess(tproducts)
-
     case OK ⇒
       log.info(s"product is added to the kafka-log: $outputTopic")
   }
 }
 
 object ProductApiActor {
+
+  case object OK
 
   def props(): Props = Props(new ProductApiActor)
 

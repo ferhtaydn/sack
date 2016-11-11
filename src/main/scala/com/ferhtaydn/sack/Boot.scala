@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-trait Boot {
+trait Boot extends App {
 
   def terminate(system: ActorSystem): Unit = {
     scala.sys.addShutdownHook {

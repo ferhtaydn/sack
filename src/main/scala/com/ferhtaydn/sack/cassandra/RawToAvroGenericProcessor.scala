@@ -4,9 +4,9 @@ import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import com.ferhtaydn.sack.http.Models.OK
-import com.ferhtaydn.sack.model.TProduct
+import com.ferhtaydn.sack.http.ProductApiActor.OK
 import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.model.Product
 import com.ferhtaydn.sack.settings.Settings
 import io.confluent.kafka.serializers.{ KafkaAvroDeserializer, KafkaAvroSerializer }
 import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
@@ -17,7 +17,7 @@ import scala.collection.JavaConversions._
 /**
  * Cassandra-sink Serialization compatible
  */
-object RawToAvroGenericProcessorBoot extends App with Boot {
+object RawToAvroGenericProcessorBoot extends Boot {
 
   val system = ActorSystem("raw-to-avro-generic-processor-system")
 
@@ -133,16 +133,16 @@ class RawToAvroGenericProcessor(
 
   private def processRecords(records: ConsumerRecords[Object, Object]) = {
 
-    val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[TProduct])) {
+    val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[Product])) {
       case ((v, p), (key, value)) ⇒
         log.info(s"Received [$key, $value]")
-        ProductSchema.createTProduct(value.asInstanceOf[String]) match {
+        ProductSchema.createProduct(value.asInstanceOf[String]) match {
           case None     ⇒ (value.asInstanceOf[String] +: v, p)
           case Some(tp) ⇒ (v, tp +: p)
         }
     }
 
-    val transformedRecords = validRecords.map(r ⇒ (r.barcode, ProductSchema.tProductToRecord(r)))
+    val transformedRecords = validRecords.map(r ⇒ (r.barcode, ProductSchema.productToRecord(r)))
 
     log.info(s"transformedRecords: $transformedRecords")
     log.info(s"invalid values: $invalidValues")

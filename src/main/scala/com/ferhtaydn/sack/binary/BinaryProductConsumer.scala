@@ -10,7 +10,7 @@ import org.apache.kafka.common.serialization.{ ByteArrayDeserializer, StringDese
 
 import scala.concurrent.duration._
 
-object BinaryProductConsumerBoot extends App with Boot {
+object BinaryProductConsumerBoot extends Boot {
 
   val system = ActorSystem("binary-product-consumer-system")
   val settings = Settings(system)

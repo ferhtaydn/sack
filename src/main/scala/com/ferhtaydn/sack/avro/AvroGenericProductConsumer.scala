@@ -12,7 +12,7 @@ import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.concurrent.duration._
 
-object AvroGenericProductConsumerBoot extends App with Boot {
+object AvroGenericProductConsumerBoot extends Boot {
 
   val system = ActorSystem("avro-product-consumer-system")
   val settings = Settings(system)

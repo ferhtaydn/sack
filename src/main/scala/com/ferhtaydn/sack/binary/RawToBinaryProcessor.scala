@@ -10,7 +10,7 @@ import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeseri
 
 import scala.concurrent.duration._
 
-object RawToBinaryProcessorBoot extends App with Boot {
+object RawToBinaryProcessorBoot extends Boot {
 
   val system = ActorSystem("raw-to-binary-processor-system")
   val settings = Settings(system)
@@ -110,7 +110,7 @@ class RawToBinaryProcessor(
 
     def prepareRecord(key: Option[String], value: String): (String, Array[Byte]) = {
       val p = ProductSchema.dummyProduct
-      (p.imageUrl, ProductSchema.productAsBytes(p))
+      (p.barcode, ProductSchema.productAsBytes(p))
     }
 
     val transformedRecords = records.pairs.map {

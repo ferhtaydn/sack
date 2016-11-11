@@ -12,7 +12,7 @@ import org.apache.kafka.common.serialization.{ StringDeserializer, StringSeriali
 
 import scala.concurrent.duration._
 
-object RawToAvroGenericProcessorBoot extends App with Boot {
+object RawToAvroGenericProcessorBoot extends Boot {
 
   val system = ActorSystem("raw-to-avro-generic-processor-system")
   val settings = Settings(system)
@@ -117,7 +117,7 @@ class RawToAvroGenericProcessor(
 
     def prepareRecord(key: Option[String], value: String): (String, GenericRecord) = {
       val p = ProductSchema.dummyProduct
-      (p.imageUrl, ProductSchema.productToRecord(p))
+      (p.barcode, ProductSchema.productToRecord(p))
     }
 
     val transformedRecords = records.pairs.map {
