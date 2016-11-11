@@ -8,8 +8,6 @@ import org.apache.avro.Schema
 import com.ferhtaydn.sack.model.Product
 import org.apache.avro.generic.GenericRecord
 
-import scala.util.{ Success, Try }
-
 //noinspection ScalaStyle
 object ProductSchema {
   // Schema file as a input stream
@@ -72,13 +70,7 @@ object ProductSchema {
 
   def createProduct(s: String): Option[Product] = {
 
-    println(s"current value: $s")
-
-    val arr = s.split(",", -1)
-
-    println(s"current arr: ${arr.toList} \n ${arr.length}")
-
-    CsvParser[Product].parse(arr.toSeq).toOption.filter { p ⇒
+    CsvParser[Product].parse(s.split(",", -1).toSeq).toOption.filter { p ⇒
 
       p.brand.nonEmpty && p.brand.length <= 30 &&
         p.supplierId.nonEmpty && p.supplierId.length <= 50 && (p.supplierId.toLong > 0) &&
