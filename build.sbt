@@ -43,8 +43,11 @@ libraryDependencies ++= Seq(
     excludeAll ExclusionRule(organization = "org.apache.kafka"),
 
   "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
-  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
+  //"com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.11" % "test",
+
+  "io.circe"          %% "circe-generic"          % "0.5.2",
+  "de.heikoseeberger" %% "akka-http-circe"        % "1.10.1",
 
 "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1"
     excludeAll ExclusionRule(organization = "org.apache.avro"),

@@ -4,11 +4,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.ActorMaterializer
-import com.ferhtaydn.sack.model.Product
+import com.ferhtaydn.sack.model.{ Product, TProduct }
 import com.ferhtaydn.sack.settings.Settings
 import com.ferhtaydn.sack.http.Models._
+
+import de.heikoseeberger.akkahttpcirce.CirceSupport._
 
 import scala.io.StdIn
 
@@ -22,6 +23,8 @@ object WebServer extends App {
 
   val productApi = system.actorOf(ProductApiActor.props(), "product-api-actor")
 
+  import io.circe.generic.auto._
+
   val route =
     path("product") {
       post {
@@ -34,6 +37,21 @@ object WebServer extends App {
       path("products") {
         post {
           entity(as[Products]) { products ⇒
+            productApi ! products
+            complete((StatusCodes.Accepted, "Products are saved to Kafka"))
+          }
+        }
+      } ~ path("tproduct") {
+        post {
+          entity(as[TProduct]) { product ⇒
+            productApi ! TProducts(List(product))
+            complete((StatusCodes.Accepted, "Product is saved to Kafka"))
+          }
+        }
+      } ~
+      path("tproducts") {
+        post {
+          entity(as[TProducts]) { products ⇒
             productApi ! products
             complete((StatusCodes.Accepted, "Products are saved to Kafka"))
           }
