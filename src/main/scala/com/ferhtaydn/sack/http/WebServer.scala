@@ -29,17 +29,21 @@ object WebServer extends App {
   val route =
     path("product") {
       post {
-        entity(as[Product]) { product ⇒
-          productApi ! Products(List(product))
-          complete((StatusCodes.Accepted, "Product is saved to Kafka"))
+        decodeRequest {
+          entity(as[Product]) { product ⇒
+            productApi ! Products(List(product))
+            complete((StatusCodes.Accepted, "Product is saved to Kafka"))
+          }
         }
       }
     } ~
       path("products") {
         post {
-          entity(as[Products]) { products ⇒
-            productApi ! products
-            complete((StatusCodes.Accepted, "Products are saved to Kafka"))
+          decodeRequest {
+            entity(as[Products]) { products ⇒
+              productApi ! products
+              complete((StatusCodes.Accepted, "Products are saved to Kafka"))
+            }
           }
         }
       }

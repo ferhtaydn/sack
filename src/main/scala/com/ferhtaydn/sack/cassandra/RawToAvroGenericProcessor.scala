@@ -135,7 +135,7 @@ class RawToAvroGenericProcessor(
 
     val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[Product])) {
       case ((v, p), (key, value)) ⇒
-        log.info(s"Received [$key, $value]")
+        //log.info(s"Received [$key, $value]")
         ProductSchema.createProduct(value.asInstanceOf[String]) match {
           case None     ⇒ (value.asInstanceOf[String] +: v, p)
           case Some(tp) ⇒ (v, tp +: p)
@@ -144,8 +144,8 @@ class RawToAvroGenericProcessor(
 
     val transformedRecords = validRecords.map(r ⇒ (r.barcode, ProductSchema.productToRecord(r)))
 
-    log.info(s"transformedRecords: $transformedRecords")
-    log.info(s"invalid values: $invalidValues")
+    log.info(s"transformedRecords: ${transformedRecords.length}")
+    log.info(s"invalid values: ${invalidValues.length}")
 
     log.info(s"Batch complete, offsets: ${records.offsets}")
 

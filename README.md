@@ -10,6 +10,8 @@ confluent.io stack is used.
 > invalid lines are stored in a failure topic to be able to investigate later,
 > also, there is an http layer to post products to http topic that is also consumed by cassandra sink connector to the products table.
 
+> for the big json products content, you can encode the content with Content-Transfer-Encoding header set to gzip.
+
 ```
 $ cd confluent-3.0.1
 
