@@ -28,6 +28,8 @@ object ProductSchema {
       override def apply(): Schema = productSchema
     }
 
+  val format = RecordFormat[Product]
+
   def productAsBytes(p: Product): Array[Byte] = {
     val baos = new ByteArrayOutputStream
     val output = AvroOutputStream.binary[Product](baos)
@@ -59,12 +61,10 @@ object ProductSchema {
   }
 
   def productToRecord(p: Product): GenericRecord = {
-    val format = RecordFormat[Product]
     format.to(p)
   }
 
   def productFromRecord(productRecord: GenericRecord): Product = {
-    val format = RecordFormat[Product]
     format.from(productRecord)
   }
 
