@@ -4,6 +4,8 @@ This project is a kind of PoC to develop simple flows with (eventually) Spark, A
 
 confluent.io stack is used.
 
+A step-by-step multi node installation manual can be found at this [guide](https://gist.github.com/ferhtaydn/1c803f28a414c75e5d5df365af11f9c7). 
+
 > simple csv file is consumed by Kafka FileStreamSource connector to a raw topic,
 > each line is tried to be converted to a Product class,
 > successful records are consumed by cassandra sink connector to the products table,
