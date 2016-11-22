@@ -137,7 +137,7 @@ class RawToAvroGenericProcessor(
     val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[Product])) {
       case ((v, p), (key, value)) ⇒
         //log.info(s"Received [$key, $value]")
-        ProductExt.createProduct(value.asInstanceOf[String]) match {
+        ProductExt.createProduct(value.asInstanceOf[String]).filter(ProductExt.isValid) match {
           case None     ⇒ (value.asInstanceOf[String] +: v, p)
           case Some(tp) ⇒ (v, tp +: p)
         }

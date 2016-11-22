@@ -1,18 +1,19 @@
 package com.ferhtaydn.sack.models
 
-import com.ferhtaydn.sack.csv.CsvParser
+import com.ferhtaydn.sack.csv.{ CsvParser, StringParser }
 import com.ferhtaydn.sack.model.Product
 
 //noinspection ScalaStyle
 object ProductExt {
 
   def createProduct(s: String): Option[Product] = {
-    CsvParser[Product].parse(s.split(",", -1).toSeq).toOption.filter(isValid)
+    CsvParser[Product].parse(s.split(",", -1).toSeq).toOption
   }
 
   def isValid(p: Product): Boolean = {
     p.brand.nonEmpty && p.brand.length <= 30 &&
-      p.supplierId.nonEmpty && p.supplierId.length <= 50 && (p.supplierId.toLong > 0) &&
+      p.supplierId.nonEmpty && p.supplierId.length <= 50 &&
+      StringParser.longParser.parse(p.supplierId).toOption.exists(_ > 0) &&
       p.productType.nonEmpty && p.productType.length <= 50 &&
       p.gender.forall(_.length <= 10) &&
       p.ageGroup.forall(_.length <= 3000) &&
@@ -42,41 +43,13 @@ object ProductExt {
   }
 
   def dummyProduct = Product(
-    brand = "Mees",
-    supplierId = "59",
-    productType = "2",
-    gender = Some("1"),
-    ageGroup = Some("11"),
-    category = Some("3021"),
-    productFeature = "A13",
-    productCode = "TRED_IUH2",
-    webProductDesc = "Web Ürün Tanımı",
-    productDesc = "Ürün Tanımı",
-    supplierColor = "TASSS",
-    colorFeature = Some("C01"),
-    barcode = java.util.UUID.randomUUID.toString,
-    supplierSize = "34",
-    dsmSize = "B20",
-    stockUnit = Some("Adet"),
-    ftStockQuantity = Some(1),
-    ftPurchasePriceVatInc = Some(10),
-    psfVatInc = Some(20),
-    tsfVatInc = Some(15),
-    vatRate = Some(18),
-    material = Some("Materyal"),
-    composition = Some("Kompozisyon"),
-    productionPlace = Some("IT"),
-    productWeightKg = Some(1),
-    productionContentWriting = Some("Ürün İçerik Yazısı"),
-    productDetail = Some("Ürün Detayı"),
-    sampleSize = Some("Numune Bedeni"),
-    modelSize = Some("Manken Ölçüsü"),
-    supplierProductCode = Some("Tedarikçi Ürün Kodu"),
-    project = Some("Proje"),
-    theme = Some("Tema"),
-    trendLevel = Some("TF02"),
-    designer = Some("Tasarımcı"),
-    imageUrl = None
+    "Brand", "59", "2", Some("1"), Some("11"), Some("3021"),
+    "A12", "P1", "WebDesc", "ProductDesc", "Black", Some("C01"),
+    java.util.UUID.randomUUID.toString.take(20),
+    "33", "B19", Some("Count"), Some(1), Some(10.0), Some(20.0), Some(15.0), Some(18.0),
+    Some("Material"), Some("Composition"), Some("IT"), Some(1.0),
+    Some("Content"), Some("ProductDetail"), Some("sampleSize"), Some("modelSize"), Some("supplierProductCode"),
+    Some("Project"), Some("Theme"), Some("TF01"), Some("Designer"), None
   )
 
 }
