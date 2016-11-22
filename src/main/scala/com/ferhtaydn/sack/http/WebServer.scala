@@ -41,6 +41,7 @@ object WebServer extends App {
         post {
           decodeRequest {
             entity(as[Products]) { products ⇒
+              system.log.info("products are sending to the product-api-actor")
               productApi ! products
               complete((StatusCodes.Accepted, "Products are saved to Kafka"))
             }

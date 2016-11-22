@@ -5,8 +5,9 @@ import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubsc
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
 import com.ferhtaydn.sack.http.ProductApiActor.OK
-import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.Boot
 import com.ferhtaydn.sack.model.Product
+import com.ferhtaydn.sack.models.{ ProductExt, ProductSchema }
 import com.ferhtaydn.sack.settings.Settings
 import io.confluent.kafka.serializers.{ KafkaAvroDeserializer, KafkaAvroSerializer }
 import com.ferhtaydn.sack.settings.TypesafeConfigExtensions._
@@ -136,7 +137,7 @@ class RawToAvroGenericProcessor(
     val (invalidValues, validRecords) = records.pairs.foldLeft((Seq.empty[String], Seq.empty[Product])) {
       case ((v, p), (key, value)) ⇒
         //log.info(s"Received [$key, $value]")
-        ProductSchema.createProduct(value.asInstanceOf[String]) match {
+        ProductExt.createProduct(value.asInstanceOf[String]) match {
           case None     ⇒ (value.asInstanceOf[String] +: v, p)
           case Some(tp) ⇒ (v, tp +: p)
         }

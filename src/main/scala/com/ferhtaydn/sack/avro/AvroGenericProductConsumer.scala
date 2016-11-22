@@ -5,7 +5,8 @@ import cakesolutions.kafka.KafkaConsumer
 import cakesolutions.kafka.akka.{ ConsumerRecords, KafkaConsumerActor }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import com.ferhtaydn.sack.settings.Settings
-import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.Boot
+import com.ferhtaydn.sack.models.ProductSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.StringDeserializer

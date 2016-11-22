@@ -4,7 +4,8 @@ import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
-import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.models.{ ProductExt, ProductSchema }
+import com.ferhtaydn.sack.Boot
 import com.ferhtaydn.sack.settings.Settings
 import org.apache.kafka.common.serialization.{ ByteArraySerializer, StringDeserializer, StringSerializer }
 
@@ -109,7 +110,7 @@ class RawToBinaryProcessor(
   private def processRecords(records: ConsumerRecords[String, String]) = {
 
     def prepareRecord(key: Option[String], value: String): (String, Array[Byte]) = {
-      val p = ProductSchema.dummyProduct
+      val p = ProductExt.dummyProduct
       (p.barcode, ProductSchema.productAsBytes(p))
     }
 

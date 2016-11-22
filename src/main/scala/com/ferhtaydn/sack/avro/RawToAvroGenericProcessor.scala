@@ -4,8 +4,9 @@ import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import cakesolutions.kafka.akka.KafkaConsumerActor.{ Confirm, Subscribe, Unsubscribe }
 import cakesolutions.kafka.akka._
 import cakesolutions.kafka.{ KafkaConsumer, KafkaProducer }
+import com.ferhtaydn.sack.models.{ ProductExt, ProductSchema }
 import com.ferhtaydn.sack.settings.Settings
-import com.ferhtaydn.sack.{ Boot, ProductSchema }
+import com.ferhtaydn.sack.Boot
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.{ StringDeserializer, StringSerializer }
@@ -116,7 +117,7 @@ class RawToAvroGenericProcessor(
   private def processRecords(records: ConsumerRecords[String, String]) = {
 
     def prepareRecord(key: Option[String], value: String): (String, GenericRecord) = {
-      val p = ProductSchema.dummyProduct
+      val p = ProductExt.dummyProduct
       (p.barcode, ProductSchema.productToRecord(p))
     }
 
