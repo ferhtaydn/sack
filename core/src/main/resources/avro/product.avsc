@@ -1,0 +1,147 @@
+ {
+    "type": "record",
+    "name": "Product",
+    "namespace": "com.ferhtaydn.common.models",
+    "fields": [
+        {
+             "name": "brand",
+             "type": "string"
+        },
+        {
+            "name": "supplierId",
+            "type": "string"
+        },
+        {
+            "name": "productType",
+            "type": "string"
+        },
+        {
+            "name": "gender",
+            "type": ["null", "string"]
+        },
+        {
+            "name": "ageGroup",
+            "type": ["null", "string"]
+        },
+        {
+            "name": "category",
+            "type": ["null", "string"]
+        },
+        {
+             "name": "productFeature",
+             "type": "string"
+         },
+         {
+             "name": "productCode",
+             "type": "string"
+         },
+         {
+             "name": "webProductDesc",
+             "type": "string"
+         },
+         {
+             "name": "productDesc",
+             "type": "string"
+         },
+         {
+             "name": "supplierColor",
+             "type": "string"
+         },
+         {
+             "name": "colorFeature",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "barcode",
+             "type": "string"
+         },
+         {
+             "name": "supplierSize",
+             "type": "string"
+         },
+         {
+             "name": "dsmSize",
+             "type": "string"
+         },
+         {
+             "name": "stockUnit",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "ftStockQuantity",
+             "type": ["null", "int"]
+         },
+         {
+             "name": "ftPurchasePriceVatInc",
+             "type": ["null", "double"]
+         },
+         {
+             "name": "psfVatInc",
+             "type": ["null", "double"]
+         },
+         {
+             "name": "tsfVatInc",
+             "type": ["null", "double"]
+         },
+         {
+             "name": "vatRate",
+             "type": ["null", "double"]
+         },
+         {
+             "name": "material",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "composition",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "productionPlace",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "productWeightKg",
+             "type": ["null", "double"]
+         },
+         {
+             "name": "productionContentWriting",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "productDetail",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "sampleSize",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "modelSize",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "supplierProductCode",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "project",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "theme",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "trendLevel",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "designer",
+             "type": ["null", "string"]
+         },
+         {
+             "name": "imageUrl",
+             "type": ["null", "string"]
+         }
+    ]
+ }

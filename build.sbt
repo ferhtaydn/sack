@@ -6,13 +6,34 @@ import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 lazy val root = (project in file("."))
+  .settings(name := "sack")
+  .aggregate(csv, core, api, examples)
+
+lazy val csv = (project in file("csv"))
+  .settings(projectSettings: _*)
+  .settings(libraryDependencies ++= Dependencies.allDependencies)
+  .settings(scoverageSettings: _*)
+  .dependsOn(core)
+
+lazy val core = (project in file("core"))
   .settings(projectSettings: _*)
   .settings(libraryDependencies ++= Dependencies.allDependencies)
   .settings(scoverageSettings: _*)
 
+lazy val api = (project in file("api"))
+  .settings(projectSettings: _*)
+  .settings(libraryDependencies ++= Dependencies.allDependencies)
+  .settings(scoverageSettings: _*)
+  .dependsOn(core)
+
+lazy val examples = (project in file("examples"))
+  .settings(projectSettings: _*)
+  .settings(libraryDependencies ++= Dependencies.allDependencies)
+  .settings(scoverageSettings: _*)
+  .dependsOn(core)
+
 lazy val projectSettings = Seq(
-  name := "sack",
-  version := "0.1.0",
+  version := "0.2.0",
   organization := "com.ferhtaydn",
   scalaVersion := Dependencies.scalaV,
   resolvers ++= Dependencies.resolvers,
@@ -38,6 +59,7 @@ lazy val projectSettings = Seq(
   parallelExecution in Test := true,
   publishArtifact in Test := false,
   cancelable in Global := true,
+  autoAPIMappings := true,
   coverageEnabled := true //scoverage: run "sbt coverageReport" for report.
 )
 
