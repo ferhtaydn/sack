@@ -1,69 +1,23 @@
+import sbt._
+import Keys._
+
 import scalariform.formatter.preferences._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
-name := "sack"
+lazy val root = (project in file("."))
+  .settings(projectSettings: _*)
+  .settings(libraryDependencies ++= Dependencies.allDependencies)
+  .settings(scoverageSettings: _*)
 
-organization := "com.ferhtaydn"
-
-version := "0.1.0"
-
-scalaVersion := "2.11.8"
-
-crossScalaVersions := Seq("2.10.6", "2.11.8")
-
-resolvers ++= Seq(
-  "confluent" at "http://packages.confluent.io/maven/",
-  "confluent-repository" at "http://packages.confluent.io/maven/",
-  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
-  Resolver.bintrayRepo("cakesolutions", "maven"),
-  Resolver.sonatypeRepo("snapshots"),
-  Resolver.sonatypeRepo("releases")
-)
-
-libraryDependencies ++= Seq(
-  "net.cakesolutions" %% "scala-kafka-client" % "0.10.0.0"
-    exclude("log4j", "log4j")
-    exclude("org.slf4j", "slf4j-log4j12")
-    exclude("org.slf4j", "log4j-over-slf4j")
-    exclude("org.slf4j", "slf4j-api")
-    excludeAll ExclusionRule(organization = "org.apache.kafka"),
-
-  "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0"
-    exclude("log4j", "log4j")
-    exclude("org.slf4j", "slf4j-log4j12")
-    exclude("org.slf4j", "log4j-over-slf4j")
-    exclude("org.slf4j", "slf4j-api")
-    excludeAll ExclusionRule(organization = "org.apache.kafka"),
-
-  "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0" % "test"
-    excludeAll ExclusionRule(organization = "org.apache.kafka"),
-
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
-  "com.typesafe.akka" %% "akka-testkit" % "2.4.11" % "test",
-  "io.circe"          %% "circe-generic"          % "0.5.2",
-  "de.heikoseeberger" %% "akka-http-circe"        % "1.10.1",
-
-"com.sksamuel.avro4s" %% "avro4s-core" % "1.6.1"
-    excludeAll ExclusionRule(organization = "org.apache.avro"),
-
-  "io.confluent" % "kafka-avro-serializer" % "3.0.1",
-
-  "org.slf4j" % "slf4j-api" % "1.7.21",
-  "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
-
-  "org.apache.kafka" % "kafka_2.11" % "0.10.0.1-cp1"
-    exclude("log4j", "log4j")
-    exclude("org.slf4j", "slf4j-log4j12")
-    exclude("org.slf4j", "log4j-over-slf4j")
-    exclude("org.slf4j", "slf4j-api"),
-
-  "com.chuusai" %% "shapeless" % "2.3.2",
-  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.3" % "test"
-)
-
-scalacOptions ++= Seq(
+lazy val projectSettings = Seq(
+  name := "sack",
+  version := "0.1.0",
+  organization := "com.ferhtaydn",
+  scalaVersion := Dependencies.scalaV,
+  resolvers ++= Dependencies.resolvers,
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+  scalacOptions ++= Seq(
     "-target:jvm-1.8",
     "-deprecation",
     "-encoding", "UTF-8",
@@ -73,15 +27,27 @@ scalacOptions ++= Seq(
     "-language:implicitConversions",
     "-language:experimental.macros",
     "-unchecked",
-    //"-Ywarn-unused-import",
     "-Ywarn-nullary-unit",
     "-Xfatal-warnings",
     "-Xlint",
     "-Yinline-warnings",
     "-Ywarn-dead-code",
-    "-Xfuture")
+    "-Xfuture"),
+  scalacOptions in Test ++= Seq("-Yrangepos"),
+  fork in Test := false,
+  parallelExecution in Test := true,
+  publishArtifact in Test := false,
+  cancelable in Global := true,
+  coverageEnabled := true //scoverage: run "sbt coverageReport" for report.
+)
 
-initialCommands := "import com.ferhtaydn.sack._"
+lazy val scoverageSettings = Seq(
+  coverageExcludedPackages := "<empty>;",
+  coverageExcludedFiles := "",
+  coverageMinimum := 1,
+  coverageFailOnMinimum := true,
+  coverageHighlighting := true
+)
 
 SbtScalariform.scalariformSettings
 
