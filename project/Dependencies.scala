@@ -8,6 +8,7 @@ object Dependencies {
     "confluent" at "http://packages.confluent.io/maven/",
     "confluent-repository" at "http://packages.confluent.io/maven/",
     Resolver.bintrayRepo("cakesolutions", "maven"),
+    Resolver.bintrayRepo("hseeberger", "maven"),
     Resolver.typesafeRepo("releases"),
     Resolver.sonatypeRepo("releases")
   )
@@ -126,7 +127,6 @@ object Dependencies {
     akkaDependencies ++
     circeDependencies ++
     avro4sDependencies ++
-    logDependencies ++
     testDependencies
 
 }

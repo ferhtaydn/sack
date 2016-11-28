@@ -3,7 +3,7 @@ import Keys._
 
 import scalariform.formatter.preferences._
 import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import de.heikoseeberger.sbtheader.license.Apache2_0
 
 lazy val root = (project in file("."))
   .settings(name := "sack")
@@ -13,23 +13,35 @@ lazy val csv = (project in file("csv"))
   .settings(projectSettings: _*)
   .settings(libraryDependencies ++= Dependencies.allDependencies)
   .settings(scoverageSettings: _*)
+  .settings(assemblyJarName in assembly := "csv.jar")
+  .settings(mainClass in assembly := Some("com.ferhtaydn.csv.RawToAvroGenericProcessorBoot"))
+  .settings(headerSettings: _*)
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core)
 
 lazy val core = (project in file("core"))
   .settings(projectSettings: _*)
   .settings(libraryDependencies ++= Dependencies.allDependencies)
   .settings(scoverageSettings: _*)
+  .settings(headerSettings: _*)
+  .enablePlugins(AutomateHeaderPlugin)
 
 lazy val api = (project in file("api"))
   .settings(projectSettings: _*)
   .settings(libraryDependencies ++= Dependencies.allDependencies)
   .settings(scoverageSettings: _*)
+  .settings(assemblyJarName in assembly := "api.jar")
+  .settings(mainClass in assembly := Some("com.ferhtaydn.http.WebServer"))
+  .settings(headerSettings: _*)
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core)
 
 lazy val examples = (project in file("examples"))
   .settings(projectSettings: _*)
   .settings(libraryDependencies ++= Dependencies.allDependencies)
   .settings(scoverageSettings: _*)
+  .settings(headerSettings: _*)
+  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core)
 
 lazy val projectSettings = Seq(
@@ -71,9 +83,17 @@ lazy val scoverageSettings = Seq(
   coverageHighlighting := true
 )
 
-SbtScalariform.scalariformSettings
+lazy val headerSettings = Seq(
+  // sbt createHeaders
+  licenses     += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0.php")),
+  headers      := Map(
+    "scala" -> Apache2_0("2016", "Ferhat Aydın"),
+    "conf"  -> Apache2_0("2016", "Ferhat Aydın", "#")
+  )
+)
 
-ScalariformKeys.preferences := ScalariformKeys.preferences.value
+SbtScalariform.autoImport.scalariformPreferences := SbtScalariform.autoImport.scalariformPreferences.value
+  .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
   .setPreference(AlignSingleLineCaseStatements, true)
   .setPreference(DoubleIndentClassDeclaration, true)
   .setPreference(RewriteArrowSymbols, true)
