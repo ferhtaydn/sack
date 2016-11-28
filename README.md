@@ -2,42 +2,44 @@ SACK - SMACK without Mesos
 
 This project is a kind of PoC to develop simple flows with (eventually) Spark, Akka, Cassandra, and Kafka. 
 
-confluent.io stack is used.
+Here is the default components of the repo;
+
+* Confluent Platform stack
+* [scala-kafka-client](https://github.com/cakesolutions/scala-kafka-client) for kafka interaction
+* akka-http for api endpoint
+* circe for decoding
+* shapeless for csv to model conversion
+* avro4s and sbt-avro4s for avro schema
+
 
 A step-by-step multi node installation manual can be found at this [guide](https://gist.github.com/ferhtaydn/1c803f28a414c75e5d5df365af11f9c7). 
 
 There are multiple projects under the root.
 
-- In `api` project, there are rest endpoints to take products inside. 
-
+* In `api` project, there are rest endpoints to take products inside. 
+    - An http layer to post products to http topic that is also consumed by cassandra sink connector to the products table.
+    - For the large json products content, you can encode the content with Content-Transfer-Encoding header set to gzip.
 ```
 java -jar api/target/scala-2.11/api.jar
 ```
-
 or
-
 ```
 $ sbt project api
 $ sbt runMain com.ferhtaydn.http.WebServer
 ```
 
-> An http layer to post products to http topic that is also consumed by cassandra sink connector to the products table.
-> For the large json products content, you can encode the content with Content-Transfer-Encoding header set to gzip.
-
-- In `csv` project, a simple flow of messages processing is simulated. Consuming a topic, some validation, and producing to the another topic.
-
+* In `csv` project, a simple flow of messages processing is simulated. Consuming a topic, some validation, and producing to the another topic.
+    - simple csv file is consumed by Kafka FileStreamSource connector to a raw topic,
+    - each line is tried to be converted to a Product class,
+    - successful records are consumed by cassandra sink connector to the products table,
+    - invalid lines are stored in a failure topic to be able to investigate later
 ```
 java -jar csv/target/scala-2.11/csv.jar
 ```
 
-> simple csv file is consumed by Kafka FileStreamSource connector to a raw topic,
-> each line is tried to be converted to a Product class,
-> successful records are consumed by cassandra sink connector to the products table,
-> invalid lines are stored in a failure topic to be able to investigate later
-
-- In `examples` project, there are binary and avro formatted messages used with `scala-kafka-client`.
+* In `examples` project, there are binary and avro formatted messages used with `scala-kafka-client`.
  
-- Common code for all other projects is placed under the `core` project.
+* Common code for all other projects is placed under the `core` project.
 
 #### Step-by-step guide in local
 
